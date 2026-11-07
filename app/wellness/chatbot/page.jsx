@@ -117,6 +117,10 @@ const TEXT = {
   },
 };
 
+// ขนาดกรอบโปรไฟล์หมอฮูก (เดิม 40)
+const AVATAR_SIZE = 72;
+const AVATAR_OFFSET = AVATAR_SIZE + 8;
+
 const GREETING_TH = TEXT.th.greeting;
 const GREETING_EN = TEXT.en.greeting;
 
@@ -986,9 +990,9 @@ export default function WellnessChatbotPage() {
         /* Game Cards */
 
         .wc-game-area{
-          margin:12px 0 0 48px;
+          margin:12px 0 0 ${AVATAR_OFFSET}px;
           max-width:560px;
-          width:calc(100% - 48px);
+          width:calc(100% - ${AVATAR_OFFSET}px);
           border:1px solid var(--surface-muted);
           border-radius:16px;
           padding:14px;
@@ -1080,8 +1084,8 @@ export default function WellnessChatbotPage() {
         }
 
         .wc-recommendations{
-          margin:12px 0 0 48px;
-          width:calc(100% - 48px);
+          margin:12px 0 0 ${AVATAR_OFFSET}px;
+          width:calc(100% - ${AVATAR_OFFSET}px);
           border:1px solid var(--border);
           border-radius:16px;
           padding:14px;
@@ -1329,7 +1333,7 @@ export default function WellnessChatbotPage() {
                     state={owlState}
                     score={assessment?.score ?? null}
                     lang={lang}
-                    size={40}
+                    size={AVATAR_SIZE}
                   />
                 )}
 
@@ -1351,7 +1355,7 @@ export default function WellnessChatbotPage() {
               {i === 0 && !started && (
                 <div
                   className="wc-chips"
-                  style={{ margin: "12px 0 0 48px" }}
+                  style={{ margin: `12px 0 0 ${AVATAR_OFFSET}px` }}
                   aria-label={lang === "en" ? "Choose a recommendation type" : "เลือกประเภทคำแนะนำ"}
                 >
                   <button
@@ -1407,7 +1411,7 @@ export default function WellnessChatbotPage() {
                 !loading && (
                   <div
                     className="wc-chips"
-                    style={{ margin: "10px 0 0 48px" }}
+                    style={{ margin: `10px 0 0 ${AVATAR_OFFSET}px` }}
                   >
                     {m.suggestions.map((s, index) => (
                       <button
@@ -1426,7 +1430,7 @@ export default function WellnessChatbotPage() {
 
           {loading && (
             <div className="wc-row">
-              <OwlAvatar size={40} />
+              <OwlAvatar size={AVATAR_SIZE} />
               <div
                 className="wc-bub bot"
                 aria-label={t.typing}
