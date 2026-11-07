@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -16,7 +17,8 @@ import {
   UsersRound,
   Home,
   MapPinned,
-  Package
+  Package,
+  HeartPulse
 } from "lucide-react";
 import { getTranslation } from "@/lib/translations";
 
@@ -31,6 +33,7 @@ export default function SidebarNav({ currentLang = "en" }: SidebarNavProps) {
   const navItems = [
     { href: "/", label: t.overview, icon: Home },
     { href: "/dashboard", label: t.dashboard, icon: LayoutDashboard },
+    { href: "/wellness", label: currentLang === "th" ? "สุขภาพ" : "Wellness", icon: HeartPulse },
     { href: "/data-pulls", label: t.dataPulls, icon: Inbox },
     { href: "/map", label: t.map, icon: MapPinned },
     { href: "/network", label: t.network, icon: Network },
@@ -49,11 +52,18 @@ export default function SidebarNav({ currentLang = "en" }: SidebarNavProps) {
     <nav className="nav" aria-label="Primary">
       {navItems.map((item) => {
         const Icon = item.icon;
-        const isActive = item.href === "/admin" ? pathname.startsWith("/admin") : pathname === item.href;
+
+        const isActive =
+          item.href === "/admin"
+            ? pathname.startsWith("/admin")
+            : item.href === "/wellness"
+              ? pathname === "/wellness" || pathname.startsWith("/wellness/")
+              : pathname === item.href;
+
         return (
-          <Link 
-            key={item.href} 
-            href={item.href} 
+          <Link
+            key={item.href}
+            href={item.href}
             className={isActive ? "active" : ""}
           >
             <Icon size={17} aria-hidden="true" />
