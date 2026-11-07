@@ -8,7 +8,6 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import BackgroundMusic from "../../../components/BackgroundMusic";
 
 const KEY = "jaibao_teen_v1";
 const day = (off = 0) => new Date(Date.now() - off * 864e5).toISOString().slice(0, 10);
@@ -316,7 +315,6 @@ export default function JaibaoGamesPage() {
   return (
     <main className="jb">
       <style>{CSS}</style>
-      <BackgroundMusic />
       <header className="top">
         <div className="lv">LV {lv}</div>
         <div className="xpbar"><i style={{ width: `${s.xp % 100}%` }} /></div>
