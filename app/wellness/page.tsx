@@ -4,7 +4,26 @@
 import { useEffect, useState } from "react";
 import { getTranslation, type Language } from "@/lib/translations";
 
-const wellnessSteps = [
+type StepType = "assessment" | "chatbot" | "activities" | "planner";
+type StepStatus = "available" | "completed" | "locked";
+
+type WellnessStep = {
+  number: string;
+  icon: string;
+  href: string;
+  type: StepType;
+};
+
+type UpdatedStep = WellnessStep & {
+  title: string;
+  subtitle: string;
+  description: string;
+  status: StepStatus;
+  statusText: string;
+  buttonText: string;
+};
+
+const wellnessSteps: WellnessStep[] = [
   {
     number: "01",
     icon: "💗",
@@ -34,6 +53,7 @@ const wellnessSteps = [
 export default function WellnessPage() {
   const [assessmentCompleted, setAssessmentCompleted] = useState(false);
   const [lang, setLang] = useState<Language>("en");
+  const [isReady, setIsReady] = useState(false);
 
   // ตรวจสอบภาษาและสถานะการประเมิน
   useEffect(() => {
@@ -43,21 +63,23 @@ export default function WellnessPage() {
 
       setLang(currentLang);
 
-      const completed = localStorage.getItem(
-        "wellness_assessment_completed"
-      );
+      const completed =
+        localStorage.getItem("wellness_assessment_completed") === "true";
 
-      setAssessmentCompleted(completed === "true");
+      setAssessmentCompleted(completed);
+      setIsReady(true);
     };
 
     updatePageData();
 
     window.addEventListener("focus", updatePageData);
     window.addEventListener("pageshow", updatePageData);
+    window.addEventListener("storage", updatePageData);
 
     return () => {
       window.removeEventListener("focus", updatePageData);
       window.removeEventListener("pageshow", updatePageData);
+      window.removeEventListener("storage", updatePageData);
     };
   }, []);
 
@@ -76,7 +98,7 @@ export default function WellnessPage() {
   const progress = (completedSteps / 2) * 100;
 
   // ข้อมูลการ์ดตามภาษา
-  const updatedSteps = wellnessSteps.map((step) => {
+  const updatedSteps: UpdatedStep[] = wellnessSteps.map((step) => {
     // STEP 01: Stress Assessment
     if (step.type === "assessment") {
       return {
@@ -128,8 +150,7 @@ export default function WellnessPage() {
             ? "Explore various activities that can help you relax, reduce stress, and improve your well-being."
             : "ค้นหากิจกรรมหลากหลายรูปแบบที่ช่วยให้คุณผ่อนคลาย ลดความเครียด และดูแลสุขภาพใจ",
         status: "available",
-        statusText:
-          lang === "en" ? "Available" : "พร้อมใช้งาน",
+        statusText: lang === "en" ? "Available" : "พร้อมใช้งาน",
         buttonText:
           lang === "en" ? "Explore Activities" : "ดูกิจกรรมแนะนำ",
       };
@@ -151,8 +172,7 @@ export default function WellnessPage() {
           ? "Create your own break plan and organize relaxing activities that fit your daily routine."
           : "จัดตารางเวลาพักส่วนตัวและเลือกกิจกรรมผ่อนคลายให้เหมาะกับกิจวัตรประจำวันของคุณ",
       status: "available",
-      statusText:
-        lang === "en" ? "Available" : "พร้อมใช้งาน",
+      statusText: lang === "en" ? "Available" : "พร้อมใช้งาน",
       buttonText:
         lang === "en" ? "Open Break Planner" : "เปิด Break Planner",
     };
@@ -293,7 +313,10 @@ export default function WellnessPage() {
         }}
       >
         {updatedSteps.map((step) => {
-          const isLocked = step.status === "locked";
+          // ล็อกเฉพาะ Chatbot เมื่อยังไม่ได้ประเมิน
+          const isLocked =
+            step.type === "chatbot" && !assessmentCompleted;
+
           const isCompleted = step.status === "completed";
 
           return (
@@ -406,6 +429,7 @@ export default function WellnessPage() {
                 <button
                   type="button"
                   disabled
+                  aria-disabled="true"
                   style={{
                     width: "100%",
                     padding: "12px",
@@ -418,7 +442,7 @@ export default function WellnessPage() {
                     cursor: "not-allowed",
                   }}
                 >
-                  {step.buttonText}
+                  🔒 {step.buttonText}
                 </button>
               ) : (
                 <a
