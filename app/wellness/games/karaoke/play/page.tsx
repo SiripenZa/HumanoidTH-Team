@@ -75,8 +75,8 @@ export default function KaraokePlayPage() {
   const router = useRouter();
   const params = useSearchParams();
 
-  const songId = params.get("song") || "if-we-meet-again";
-  const gender = params.get("voice") || "female";
+  const songId = params?.get("song") || "if-we-meet-again";
+  const gender = params?.get("voice") || "female";
   const song = songs[songId] || songs["if-we-meet-again"];
 
   const playerRef = useRef<YouTubePlayer | null>(null);
