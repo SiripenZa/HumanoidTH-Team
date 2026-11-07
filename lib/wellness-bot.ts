@@ -1,7 +1,9 @@
 // Wellness Chatbot "Robot Guide" — local rule-based engine (works offline, no API key needed).
 // Used (1) for quick-reply chips, (2) for crisis safety, (3) as a fallback when the AI route is unavailable.
 
-export type Topic = "stress" | "bored" | "study" | "friends" | "family" | "sleep" | "sad" | "vent";
+import { detectTopic as detectTopicEn } from "./wellness-bot-en";
+
+export type Topic ="stress" | "bored" | "study" | "friends" | "family" | "sleep" | "sad" | "vent";
 export type GameMood = "quick" | "calm" | "friends" | "mix";
 
 export type Game = {
@@ -692,7 +694,10 @@ export function parseAssessment(raw: unknown): AssessmentSummary | null {
       : [];
   const concerns: Topic[] = [];
   for (const item of items) {
-    const tp = detectTopic(item);
+    // Accept a topic id directly ("study"), Thai text, or English text.
+    const trimmed = item.trim().toLowerCase();
+    const direct = (ASSESSMENT_TOPICS as string[]).includes(trimmed) ? (trimmed as Topic) : undefined;
+    const tp = direct ?? detectTopic(item) ?? detectTopicEn(item);
     if (tp && !concerns.includes(tp)) concerns.push(tp);
   }
 
