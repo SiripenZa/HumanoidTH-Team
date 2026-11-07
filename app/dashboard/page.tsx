@@ -11,10 +11,224 @@ export const metadata: Metadata = {
   alternates: { canonical: "/dashboard" }
 };
 
+type Lang = "en" | "th";
+type Row = { label: string; count: number };
+
+const LABELS = {
+  en: {
+    locations: "Robot Origin Locations",
+    robotTypes: "Robot Categories",
+    sourceTypes: "Source Record Types",
+    embodiment: "Robot Embodiment Levels",
+    contributions: "Contribution Types",
+    themes: "Perspective Themes",
+    confidenceTitle: "Extracted Confidence Distribution",
+    annotations: "Perspective Annotations",
+    sources: "Source Relevance Confidence",
+    high: "High (Confidence ≥ 0.8)",
+    moderate: "Moderate (0.5 ≤ Confidence < 0.8)",
+    low: "Low (Confidence < 0.5)",
+    unknown: "Unknown",
+    empty: "No statistics available.",
+    items: "items",
+    total: "total",
+    offline: "Database Offline:",
+    offlineMsg: "Live PostgreSQL is unavailable. This dashboard is not substituting example records."
+  },
+  th: {
+    locations: "ประเทศต้นกำเนิดของหุ่นยนต์",
+    robotTypes: "หมวดหมู่หุ่นยนต์",
+    sourceTypes: "ประเภทแหล่งข้อมูล",
+    embodiment: "ระดับ Embodiment ของหุ่นยนต์",
+    contributions: "ประเภทการมีส่วนร่วม",
+    themes: "ธีมมุมมอง",
+    confidenceTitle: "การกระจายระดับความเชื่อมั่นที่สกัดได้",
+    annotations: "Perspective Annotations",
+    sources: "ความเชื่อมั่นด้านความเกี่ยวข้องของแหล่งข้อมูล",
+    high: "สูง (Confidence ≥ 0.8)",
+    moderate: "ปานกลาง (0.5 ≤ Confidence < 0.8)",
+    low: "ต่ำ (Confidence < 0.5)",
+    unknown: "ไม่ระบุ",
+    empty: "ยังไม่มีข้อมูลสถิติ",
+    items: "รายการ",
+    total: "ทั้งหมด",
+    offline: "ฐานข้อมูลออฟไลน์:",
+    offlineMsg: "ไม่สามารถเชื่อมต่อ PostgreSQL ได้ แดชบอร์ดนี้จะไม่แทนที่ด้วยข้อมูลตัวอย่าง"
+  }
+} as const;
+
+// Turn a Prisma groupBy result into rows sorted from highest to lowest count.
+function toRows(arr: any[], key: string, unknownLabel: string): Row[] {
+  return arr
+    .map((item) => ({
+      label: String(item[key] ?? unknownLabel).replace(/_/g, " "),
+      count: item._count._all as number
+    }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+}
+
+const cardStyle: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  height: "100%",
+  margin: 0
+};
+
+function CardHeader({ title, badge }: { title: string; badge: string }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: "12px",
+        paddingBottom: "12px",
+        marginBottom: "14px",
+        borderBottom: "1px solid var(--surface-muted)"
+      }}
+    >
+      <h2 style={{ margin: 0, fontSize: "17px" }}>{title}</h2>
+      <span
+        style={{
+          fontSize: "12px",
+          fontWeight: 600,
+          padding: "3px 10px",
+          borderRadius: "999px",
+          background: "var(--surface-muted)",
+          whiteSpace: "nowrap"
+        }}
+      >
+        {badge}
+      </span>
+    </div>
+  );
+}
+
+function DistributionCard({
+  title,
+  rows,
+  t
+}: {
+  title: string;
+  rows: Row[];
+  t: (typeof LABELS)[Lang];
+}) {
+  const total = rows.reduce((acc, r) => acc + r.count, 0);
+
+  return (
+    <section className="panel" style={cardStyle}>
+      <CardHeader title={title} badge={`${total.toLocaleString()} ${t.total}`} />
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "14px",
+          maxHeight: "380px",
+          overflowY: "auto",
+          paddingRight: "6px"
+        }}
+      >
+        {rows.map((row, index) => {
+          const pct = total > 0 ? (row.count / total) * 100 : 0;
+          return (
+            <div key={row.label}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: "10px",
+                  fontSize: "13px",
+                  marginBottom: "5px"
+                }}
+              >
+                <span style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                  <span
+                    style={{
+                      flexShrink: 0,
+                      width: "20px",
+                      height: "20px",
+                      borderRadius: "50%",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      background: index === 0 ? "var(--accent)" : "var(--surface-muted)",
+                      color: index === 0 ? "#fff" : "inherit"
+                    }}
+                  >
+                    {index + 1}
+                  </span>
+                  <span style={{ textTransform: "capitalize", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {row.label}
+                  </span>
+                </span>
+                <strong style={{ whiteSpace: "nowrap" }}>
+                  {row.count.toLocaleString()} ({pct.toFixed(1)}%)
+                </strong>
+              </div>
+              <div style={{ height: "8px", background: "var(--surface-muted)", borderRadius: "4px", overflow: "hidden" }}>
+                <div style={{ width: `${pct}%`, height: "100%", background: "var(--accent)" }} />
+              </div>
+            </div>
+          );
+        })}
+        {!rows.length && <div className="empty">{t.empty}</div>}
+      </div>
+    </section>
+  );
+}
+
+function ConfidenceCard({
+  title,
+  total,
+  buckets,
+  t
+}: {
+  title: string;
+  total: number;
+  buckets: { label: string; count: number; color: string }[];
+  t: (typeof LABELS)[Lang];
+}) {
+  return (
+    <section className="panel" style={cardStyle}>
+      <CardHeader title={title} badge={`${total.toLocaleString()} ${t.total}`} />
+      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+        {buckets.map((bucket) => {
+          const pct = total > 0 ? (bucket.count / total) * 100 : 0;
+          return (
+            <div key={bucket.label}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: "10px",
+                  fontSize: "13px",
+                  marginBottom: "5px"
+                }}
+              >
+                <span>{bucket.label}</span>
+                <strong style={{ whiteSpace: "nowrap" }}>
+                  {bucket.count.toLocaleString()} ({pct.toFixed(1)}%)
+                </strong>
+              </div>
+              <div style={{ height: "8px", background: "var(--surface-muted)", borderRadius: "4px", overflow: "hidden" }}>
+                <div style={{ width: `${pct}%`, height: "100%", background: bucket.color }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export default async function DashboardPage() {
   const cookieStore = await cookies();
-  const lang = (cookieStore.get("lang")?.value || "en") as "en" | "th";
-  const t = getTranslation(lang);
+  const lang = (cookieStore.get("lang")?.value || "en") as Lang;
+  const tr = getTranslation(lang);
+  const t = LABELS[lang] ?? LABELS.en;
 
   let data = {
     locations: [] as any[],
@@ -79,268 +293,66 @@ export default async function DashboardPage() {
     };
   } catch (error) {
     console.error("Database connection failed in dashboard:", error);
-    data = {
-      locations: [],
-      robotTypes: [],
-      sourceTypes: [],
-      embodimentLevels: [],
-      contributionTypes: [],
-      themes: [],
-      highConfidenceAnn: 0,
-      medConfidenceAnn: 0,
-      lowConfidenceAnn: 0,
-      highConfidenceSrc: 0,
-      medConfidenceSrc: 0,
-      lowConfidenceSrc: 0,
-      dbOffline: true
-    };
+    data = { ...data, dbOffline: true };
   }
-
-  // Helper to calculate total count for percentages
-  const sumCounts = (arr: { _count: { _all: number } }[]) => 
-    arr.reduce((acc, curr) => acc + curr._count._all, 0);
-
-  const locTotal = sumCounts(data.locations);
-  const typeTotal = sumCounts(data.robotTypes);
-  const srcTotal = sumCounts(data.sourceTypes);
-  const embTotal = sumCounts(data.embodimentLevels);
-  const contribTotal = sumCounts(data.contributionTypes);
-  const themeTotal = sumCounts(data.themes);
 
   const totalAnnotations = data.highConfidenceAnn + data.medConfidenceAnn + data.lowConfidenceAnn;
   const totalSources = data.highConfidenceSrc + data.medConfidenceSrc + data.lowConfidenceSrc;
+
+  const gridStyle: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
+    gap: "16px",
+    marginTop: "12px",
+    alignItems: "stretch"
+  };
 
   return (
     <>
       <div className="topline">
         <div>
-          <h1>{t.dashboardTitle}</h1>
-          <p className="muted">
-            {t.dashboardDesc}
-          </p>
+          <h1>{tr.dashboardTitle}</h1>
+          <p className="muted">{tr.dashboardDesc}</p>
         </div>
       </div>
 
       {data.dbOffline && (
         <div className="notice" style={{ backgroundColor: "#fffbeb", borderLeftColor: "var(--warning)", marginBottom: "16px" }}>
-          <strong>Database Offline:</strong> Live PostgreSQL is unavailable. This dashboard is not substituting example records.
+          <strong>{t.offline}</strong> {t.offlineMsg}
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "16px", marginTop: "12px" }}>
-        
-        {/* Location Distribution */}
-        <section className="panel">
-          <h2>Robot Origin Locations</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {data.locations.map((loc) => {
-              const count = loc._count._all;
-              const pct = locTotal > 0 ? (count / locTotal) * 100 : 0;
-              return (
-                <div key={loc.countryOfOrigin || "unknown"}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "4px" }}>
-                    <span>{loc.countryOfOrigin || "Unknown"}</span>
-                    <strong>{count} ({pct.toFixed(1)}%)</strong>
-                  </div>
-                  <div style={{ height: "8px", background: "var(--surface-muted)", borderRadius: "4px", overflow: "hidden" }}>
-                    <div style={{ width: `${pct}%`, height: "100%", background: "var(--accent)" }} />
-                  </div>
-                </div>
-              );
-            })}
-            {!data.locations.length && <div className="empty">No location statistics available.</div>}
-          </div>
-        </section>
-
-        {/* Robot Categories */}
-        <section className="panel">
-          <h2>Robot Categories</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {data.robotTypes.map((type) => {
-              const count = type._count._all;
-              const pct = typeTotal > 0 ? (count / typeTotal) * 100 : 0;
-              return (
-                <div key={type.robotType}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "4px" }}>
-                    <span style={{ textTransform: "capitalize" }}>{type.robotType.replace(/_/g, " ")}</span>
-                    <strong>{count} ({pct.toFixed(1)}%)</strong>
-                  </div>
-                  <div style={{ height: "8px", background: "var(--surface-muted)", borderRadius: "4px", overflow: "hidden" }}>
-                    <div style={{ width: `${pct}%`, height: "100%", background: "var(--accent)" }} />
-                  </div>
-                </div>
-              );
-            })}
-            {!data.robotTypes.length && <div className="empty">No category statistics available.</div>}
-          </div>
-        </section>
-
-        {/* Source Record Types */}
-        <section className="panel">
-          <h2>Source Record Types</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {data.sourceTypes.map((st) => {
-              const count = st._count._all;
-              const pct = srcTotal > 0 ? (count / srcTotal) * 100 : 0;
-              return (
-                <div key={st.sourceType}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "4px" }}>
-                    <span style={{ textTransform: "capitalize" }}>{st.sourceType.replace(/_/g, " ")}</span>
-                    <strong>{count} ({pct.toFixed(1)}%)</strong>
-                  </div>
-                  <div style={{ height: "8px", background: "var(--surface-muted)", borderRadius: "4px", overflow: "hidden" }}>
-                    <div style={{ width: `${pct}%`, height: "100%", background: "var(--accent)" }} />
-                  </div>
-                </div>
-              );
-            })}
-            {!data.sourceTypes.length && <div className="empty">No source types statistics available.</div>}
-          </div>
-        </section>
-
-        {/* Embodiment Level */}
-        <section className="panel">
-          <h2>Robot Embodiment Levels</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {data.embodimentLevels.map((el) => {
-              const count = el._count._all;
-              const pct = embTotal > 0 ? (count / embTotal) * 100 : 0;
-              return (
-                <div key={el.embodimentLevel}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "4px" }}>
-                    <span style={{ textTransform: "capitalize" }}>{el.embodimentLevel.replace(/_/g, " ")}</span>
-                    <strong>{count} ({pct.toFixed(1)}%)</strong>
-                  </div>
-                  <div style={{ height: "8px", background: "var(--surface-muted)", borderRadius: "4px", overflow: "hidden" }}>
-                    <div style={{ width: `${pct}%`, height: "100%", background: "var(--accent)" }} />
-                  </div>
-                </div>
-              );
-            })}
-            {!data.embodimentLevels.length && <div className="empty">No embodiment levels statistics available.</div>}
-          </div>
-        </section>
-
-        {/* Contribution Type */}
-        <section className="panel">
-          <h2>Contribution Types</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {data.contributionTypes.map((ct) => {
-              const count = ct._count._all;
-              const pct = contribTotal > 0 ? (count / contribTotal) * 100 : 0;
-              return (
-                <div key={ct.contributionType}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "4px" }}>
-                    <span style={{ textTransform: "capitalize" }}>{ct.contributionType.replace(/_/g, " ")}</span>
-                    <strong>{count} ({pct.toFixed(1)}%)</strong>
-                  </div>
-                  <div style={{ height: "8px", background: "var(--surface-muted)", borderRadius: "4px", overflow: "hidden" }}>
-                    <div style={{ width: `${pct}%`, height: "100%", background: "var(--accent)" }} />
-                  </div>
-                </div>
-              );
-            })}
-            {!data.contributionTypes.length && <div className="empty">No contribution type statistics available.</div>}
-          </div>
-        </section>
-
-        {/* Perspective Themes */}
-        <section className="panel">
-          <h2>Perspective Themes</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {data.themes.map((th) => {
-              const count = th._count._all;
-              const pct = themeTotal > 0 ? (count / themeTotal) * 100 : 0;
-              return (
-                <div key={th.perspectiveTheme}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "4px" }}>
-                    <span style={{ textTransform: "capitalize" }}>{th.perspectiveTheme.replace(/_/g, " ")}</span>
-                    <strong>{count} ({pct.toFixed(1)}%)</strong>
-                  </div>
-                  <div style={{ height: "8px", background: "var(--surface-muted)", borderRadius: "4px", overflow: "hidden" }}>
-                    <div style={{ width: `${pct}%`, height: "100%", background: "var(--accent)" }} />
-                  </div>
-                </div>
-              );
-            })}
-            {!data.themes.length && <div className="empty">No theme statistics available.</div>}
-          </div>
-        </section>
-
+      <div style={gridStyle}>
+        <DistributionCard title={t.locations} rows={toRows(data.locations, "countryOfOrigin", t.unknown)} t={t} />
+        <DistributionCard title={t.robotTypes} rows={toRows(data.robotTypes, "robotType", t.unknown)} t={t} />
+        <DistributionCard title={t.sourceTypes} rows={toRows(data.sourceTypes, "sourceType", t.unknown)} t={t} />
+        <DistributionCard title={t.embodiment} rows={toRows(data.embodimentLevels, "embodimentLevel", t.unknown)} t={t} />
+        <DistributionCard title={t.contributions} rows={toRows(data.contributionTypes, "contributionType", t.unknown)} t={t} />
+        <DistributionCard title={t.themes} rows={toRows(data.themes, "perspectiveTheme", t.unknown)} t={t} />
       </div>
 
-      {/* Confidence Score Buckets */}
-      <h2 style={{ marginTop: "24px" }}>Extracted Confidence Distribution</h2>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px", marginTop: "12px" }}>
-        
-        {/* Perspective Confidence Distribution */}
-        <section className="panel">
-          <h2>Perspective Annotations (total: {totalAnnotations})</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" }}>
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "4px" }}>
-                <span>High (Confidence &ge; 0.8)</span>
-                <strong>{data.highConfidenceAnn}</strong>
-              </div>
-              <div style={{ height: "6px", background: "var(--surface-muted)", borderRadius: "3px", overflow: "hidden" }}>
-                <div style={{ width: `${totalAnnotations > 0 ? (data.highConfidenceAnn / totalAnnotations) * 100 : 0}%`, height: "100%", background: "var(--success)" }} />
-              </div>
-            </div>
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "4px" }}>
-                <span>Moderate (0.5 &le; Confidence &lt; 0.8)</span>
-                <strong>{data.medConfidenceAnn}</strong>
-              </div>
-              <div style={{ height: "6px", background: "var(--surface-muted)", borderRadius: "3px", overflow: "hidden" }}>
-                <div style={{ width: `${totalAnnotations > 0 ? (data.medConfidenceAnn / totalAnnotations) * 100 : 0}%`, height: "100%", background: "var(--warning)" }} />
-              </div>
-            </div>
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "4px" }}>
-                <span>Low (Confidence &lt; 0.5)</span>
-                <strong>{data.lowConfidenceAnn}</strong>
-              </div>
-              <div style={{ height: "6px", background: "var(--surface-muted)", borderRadius: "3px", overflow: "hidden" }}>
-                <div style={{ width: `${totalAnnotations > 0 ? (data.lowConfidenceAnn / totalAnnotations) * 100 : 0}%`, height: "100%", background: "var(--low-confidence)" }} />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Source Relevance Confidence Distribution */}
-        <section className="panel">
-          <h2>Source Relevance Confidence (total: {totalSources})</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" }}>
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "4px" }}>
-                <span>High (Confidence &ge; 0.8)</span>
-                <strong>{data.highConfidenceSrc}</strong>
-              </div>
-              <div style={{ height: "6px", background: "var(--surface-muted)", borderRadius: "3px", overflow: "hidden" }}>
-                <div style={{ width: `${totalSources > 0 ? (data.highConfidenceSrc / totalSources) * 100 : 0}%`, height: "100%", background: "var(--success)" }} />
-              </div>
-            </div>
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "4px" }}>
-                <span>Moderate (0.5 &le; Confidence &lt; 0.8)</span>
-                <strong>{data.medConfidenceSrc}</strong>
-              </div>
-              <div style={{ height: "6px", background: "var(--surface-muted)", borderRadius: "3px", overflow: "hidden" }}>
-                <div style={{ width: `${totalSources > 0 ? (data.medConfidenceSrc / totalSources) * 100 : 0}%`, height: "100%", background: "var(--warning)" }} />
-              </div>
-            </div>
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "4px" }}>
-                <span>Low (Confidence &lt; 0.5)</span>
-                <strong>{data.lowConfidenceSrc}</strong>
-              </div>
-              <div style={{ height: "6px", background: "var(--surface-muted)", borderRadius: "3px", overflow: "hidden" }}>
-                <div style={{ width: `${totalSources > 0 ? (data.lowConfidenceSrc / totalSources) * 100 : 0}%`, height: "100%", background: "var(--low-confidence)" }} />
-              </div>
-            </div>
-          </div>
-        </section>
-
+      <h2 style={{ marginTop: "28px" }}>{t.confidenceTitle}</h2>
+      <div style={gridStyle}>
+        <ConfidenceCard
+          title={t.annotations}
+          total={totalAnnotations}
+          t={t}
+          buckets={[
+            { label: t.high, count: data.highConfidenceAnn, color: "var(--success)" },
+            { label: t.moderate, count: data.medConfidenceAnn, color: "var(--warning)" },
+            { label: t.low, count: data.lowConfidenceAnn, color: "var(--low-confidence)" }
+          ]}
+        />
+        <ConfidenceCard
+          title={t.sources}
+          total={totalSources}
+          t={t}
+          buckets={[
+            { label: t.high, count: data.highConfidenceSrc, color: "var(--success)" },
+            { label: t.moderate, count: data.medConfidenceSrc, color: "var(--warning)" },
+            { label: t.low, count: data.lowConfidenceSrc, color: "var(--low-confidence)" }
+          ]}
+        />
       </div>
     </>
   );
