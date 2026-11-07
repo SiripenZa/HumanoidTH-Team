@@ -9,11 +9,25 @@ const wellnessSteps = [
     number: "01",
     icon: "💗",
     href: "/wellness/check-in",
+    type: "assessment",
   },
   {
     number: "02",
     icon: "🤖",
     href: "/wellness/chatbot",
+    type: "chatbot",
+  },
+  {
+    number: "03",
+    icon: "🌿",
+    href: "/wellness/recommendations",
+    type: "activities",
+  },
+  {
+    number: "04",
+    icon: "⏰",
+    href: "/wellness/break-planner",
+    type: "planner",
   },
 ];
 
@@ -57,13 +71,14 @@ export default function WellnessPage() {
     setAssessmentCompleted(false);
   };
 
-  // Progress ทั้งหมด 2 ขั้นตอน
+  // Progress ของขั้นตอนหลัก 2 ขั้นตอน
   const completedSteps = assessmentCompleted ? 1 : 0;
   const progress = (completedSteps / 2) * 100;
 
-  // ข้อมูลขั้นตอนตามภาษาที่เลือก
+  // ข้อมูลการ์ดตามภาษา
   const updatedSteps = wellnessSteps.map((step) => {
-    if (step.number === "01") {
+    // STEP 01: Stress Assessment
+    if (step.type === "assessment") {
       return {
         ...step,
         title: t.wellnessStep1Title,
@@ -79,18 +94,67 @@ export default function WellnessPage() {
       };
     }
 
+    // STEP 02: Chatbot
+    if (step.type === "chatbot") {
+      return {
+        ...step,
+        title: t.wellnessStep2Title,
+        subtitle: t.wellnessStep2Subtitle,
+        description: t.wellnessStep2Desc,
+        status: assessmentCompleted ? "available" : "locked",
+        statusText: assessmentCompleted
+          ? t.wellnessAvailable
+          : t.wellnessLocked,
+        buttonText: assessmentCompleted
+          ? t.wellnessStartChatbot
+          : t.wellnessCompleteStep1,
+      };
+    }
+
+    // STEP 03: Recommended Activities
+    if (step.type === "activities") {
+      return {
+        ...step,
+        title:
+          lang === "en"
+            ? "Recommended Activities"
+            : "กิจกรรมแนะนำ",
+        subtitle:
+          lang === "en"
+            ? "Relax and recharge yourself"
+            : "ผ่อนคลายและเติมพลังให้ตัวเอง",
+        description:
+          lang === "en"
+            ? "Explore various activities that can help you relax, reduce stress, and improve your well-being."
+            : "ค้นหากิจกรรมหลากหลายรูปแบบที่ช่วยให้คุณผ่อนคลาย ลดความเครียด และดูแลสุขภาพใจ",
+        status: "available",
+        statusText:
+          lang === "en" ? "Available" : "พร้อมใช้งาน",
+        buttonText:
+          lang === "en" ? "Explore Activities" : "ดูกิจกรรมแนะนำ",
+      };
+    }
+
+    // STEP 04: Break Planner
     return {
       ...step,
-      title: t.wellnessStep2Title,
-      subtitle: t.wellnessStep2Subtitle,
-      description: t.wellnessStep2Desc,
-      status: assessmentCompleted ? "available" : "locked",
-      statusText: assessmentCompleted
-        ? t.wellnessAvailable
-        : t.wellnessLocked,
-      buttonText: assessmentCompleted
-        ? t.wellnessStartChatbot
-        : t.wellnessCompleteStep1,
+      title:
+        lang === "en"
+          ? "Break Planner"
+          : "วางแผนเวลาพัก (Break Planner)",
+      subtitle:
+        lang === "en"
+          ? "Plan your personal break time"
+          : "วางแผนเวลาพักในแบบของคุณ",
+      description:
+        lang === "en"
+          ? "Create your own break plan and organize relaxing activities that fit your daily routine."
+          : "จัดตารางเวลาพักส่วนตัวและเลือกกิจกรรมผ่อนคลายให้เหมาะกับกิจวัตรประจำวันของคุณ",
+      status: "available",
+      statusText:
+        lang === "en" ? "Available" : "พร้อมใช้งาน",
+      buttonText:
+        lang === "en" ? "Open Break Planner" : "เปิด Break Planner",
     };
   });
 
@@ -313,6 +377,7 @@ export default function WellnessPage() {
                 {step.title}
               </h2>
 
+              {/* SUBTITLE */}
               <p
                 style={{
                   fontSize: "13px",
