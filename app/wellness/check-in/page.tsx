@@ -163,6 +163,7 @@ export default function CheckInPage() {
     "wellnessAssessment",
     JSON.stringify(assessmentData)
   );
+  window.dispatchEvent(new Event("wellness-assessment-updated"));
 
   setShowResult(true);
   window.scrollTo({ top: 0, behavior: "smooth" });

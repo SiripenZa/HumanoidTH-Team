@@ -1,8 +1,9 @@
-
 "use client";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import OwlWithMessage from "@/components/OwlWithMessage";
+import OwlAvatar from "@/components/OwlAvatar";
 import {
   assessRisk,
   HOTLINES,
@@ -175,7 +176,6 @@ function isGameRequest(message) {
 // การ์ดเกม
 // --------------------
 
-
 function GameCards({ lang }) {
   const t = TEXT[lang];
 
@@ -199,7 +199,7 @@ function GameCards({ lang }) {
             </div>
 
             <Link
-              href={`/wellness/recommendations?type=games&search=${encodeURIComponent(game.title[lang])}`}
+              href={`/wellness/recommendations?type=games&game=${encodeURIComponent(game.id)}`}
               className="wc-game-button"
             >
               {t.play} →
@@ -242,7 +242,7 @@ function StressRecommendations({ lang, score }) {
       <div className="wc-recommendation-list">
         {activities.map((activity) => (
           <Link
-            href={`/wellness/recommendations?type=activities&search=${encodeURIComponent(activity.title[lang])}`}
+            href={`/wellness/recommendations?type=activities&activity=${encodeURIComponent(activity.id)}`}
             className="wc-recommendation-item"
             key={activity.id}
           >
@@ -373,6 +373,32 @@ export default function WellnessChatbotPage() {
     (m) => m.role === "user"
   );
 
+  const [speaking, setSpeaking] = useState(false);
+
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (last?.role === "assistant" && started) {
+      setSpeaking(true);
+      const id = setTimeout(() => setSpeaking(false), 2500);
+      return () => clearTimeout(id);
+    }
+  }, [messages, started]);
+
+  const lastMsg = messages[messages.length - 1];
+  const owlState = loading
+    ? "thinking"
+    : lastMsg?.risk === "crisis" || lastMsg?.risk === "safety"
+      ? "caring"
+      : speaking
+        ? "speaking"
+        : "idle";
+
+  // ตำแหน่งข้อความผู้ช่วยล่าสุด — ใช้แสดงหมอฮูก 3 มิติที่ขยับได้เพียงตัวเดียว
+  const lastAssistantIdx = messages.reduce(
+    (acc, m, i) => (m.role === "assistant" ? i : acc),
+    -1
+  );
+
   // --------------------
   // อ่านภาษาจาก Cookie
   // --------------------
@@ -422,33 +448,33 @@ export default function WellnessChatbotPage() {
   // --------------------
 
   useEffect(() => {
-  try {
-    const savedAssessment =
-      sessionStorage.getItem("wellnessAssessment");
+    try {
+      const savedAssessment =
+        sessionStorage.getItem("wellnessAssessment");
 
-    if (savedAssessment) {
-      const parsed = JSON.parse(savedAssessment);
+      if (savedAssessment) {
+        const parsed = JSON.parse(savedAssessment);
 
-      if (
-        parsed &&
-        typeof parsed.score === "number" &&
-        Number.isInteger(parsed.score) &&
-        parsed.score >= 0 &&
-        parsed.score <= 15 &&
-        parsed.maxScore === 15
-      ) {
-        setAssessment(parsed);
+        if (
+          parsed &&
+          typeof parsed.score === "number" &&
+          Number.isInteger(parsed.score) &&
+          parsed.score >= 0 &&
+          parsed.score <= 15 &&
+          parsed.maxScore === 15
+        ) {
+          setAssessment(parsed);
+        }
       }
+    } catch (error) {
+      console.error(
+        "Cannot read wellness assessment:",
+        error
+      );
+    } finally {
+      setAssessmentLoaded(true);
     }
-  } catch (error) {
-    console.error(
-      "Cannot read wellness assessment:",
-      error
-    );
-  } finally {
-    setAssessmentLoaded(true);
-  }
-}, []);
+  }, []);
 
   // --------------------
   // ให้ AI เริ่มบทสนทนาจากผลประเมิน
@@ -482,6 +508,7 @@ export default function WellnessChatbotPage() {
       block: "end",
     });
   }, [messages, loading]);
+
   // --------------------
   // บันทึกว่า Step 2 เสร็จแล้ว
   // เมื่อผู้ใช้ส่งข้อความและได้รับคำตอบ
@@ -499,6 +526,7 @@ export default function WellnessChatbotPage() {
       console.error("Cannot save Step 2 status:", error);
     }
   }
+
   // --------------------
   // ส่งข้อความ
   // --------------------
@@ -506,8 +534,8 @@ export default function WellnessChatbotPage() {
   async function send(text, topicId) {
     const content = String(text || "").trim();
 
-if (!content || loading || !assessmentLoaded) return;
-chatStarted.current = true;
+    if (!content || loading || !assessmentLoaded) return;
+    chatStarted.current = true;
 
     const next = [
       ...messages.map((m) => ({
@@ -758,14 +786,22 @@ chatStarted.current = true;
 
         .wc-ava{
           flex:none;
-          width:32px;
-          height:32px;
+          width:40px;
+          height:40px;
           border-radius:50%;
           background:var(--surface-muted);
           display:flex;
           align-items:center;
           justify-content:center;
-          font-size:17px
+          font-size:17px;
+          overflow:hidden
+        }
+
+        .wc-ava img{
+          width:100%;
+          height:100%;
+          object-fit:cover;
+          display:block
         }
 
         .wc-bub{
@@ -778,9 +814,16 @@ chatStarted.current = true;
           word-break:break-word
         }
 
+        /* กรอบบับเบิลฝั่งผู้ช่วย: ใช้รูป /owl-bubble.png เป็นกรอบ (9-slice) */
         .wc-bub.bot{
-          background:var(--surface-muted);
-          border-top-left-radius:4px
+          background:transparent;
+          color:#2f3b3a;
+          padding:0;
+          border-radius:0;
+          border-style:solid;
+          border-color:transparent;
+          border-width:24px 26px 26px 26px;
+          border-image:url(/owl-bubble.png) 55 60 60 60 fill / 24px 26px 26px 26px stretch;
         }
 
         .wc-bub.user{
@@ -943,9 +986,9 @@ chatStarted.current = true;
         /* Game Cards */
 
         .wc-game-area{
-          margin:12px 0 0 40px;
+          margin:12px 0 0 48px;
           max-width:560px;
-          width:calc(100% - 40px);
+          width:calc(100% - 48px);
           border:1px solid var(--surface-muted);
           border-radius:16px;
           padding:14px;
@@ -1037,8 +1080,8 @@ chatStarted.current = true;
         }
 
         .wc-recommendations{
-          margin:12px 0 0 40px;
-          width:calc(100% - 40px);
+          margin:12px 0 0 48px;
+          width:calc(100% - 48px);
           border:1px solid var(--border);
           border-radius:16px;
           padding:14px;
@@ -1175,7 +1218,16 @@ chatStarted.current = true;
         }
       `}</style>
 
-      <div className="topline">
+      <div
+        className="topline"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "16px",
+          flexWrap: "wrap",
+        }}
+      >
         <div>
           <Link
             href="/wellness"
@@ -1203,6 +1255,13 @@ chatStarted.current = true;
           <h1>{t.title}</h1>
           <p className="muted">{t.description}</p>
         </div>
+
+        <OwlWithMessage
+          score={assessment?.score ?? null}
+          state={owlState}
+          size={190}
+          lang={lang}
+        />
       </div>
 
       <section
@@ -1265,7 +1324,13 @@ chatStarted.current = true;
                 }`}
               >
                 {m.role === "assistant" && (
-                  <div className="wc-ava">🌿</div>
+                  <OwlAvatar
+                    animated={i === lastAssistantIdx && !loading}
+                    state={owlState}
+                    score={assessment?.score ?? null}
+                    lang={lang}
+                    size={40}
+                  />
                 )}
 
                 <div
@@ -1286,7 +1351,7 @@ chatStarted.current = true;
               {i === 0 && !started && (
                 <div
                   className="wc-chips"
-                  style={{ margin: "12px 0 0 40px" }}
+                  style={{ margin: "12px 0 0 48px" }}
                   aria-label={lang === "en" ? "Choose a recommendation type" : "เลือกประเภทคำแนะนำ"}
                 >
                   <button
@@ -1342,7 +1407,7 @@ chatStarted.current = true;
                 !loading && (
                   <div
                     className="wc-chips"
-                    style={{ margin: "10px 0 0 40px" }}
+                    style={{ margin: "10px 0 0 48px" }}
                   >
                     {m.suggestions.map((s, index) => (
                       <button
@@ -1361,7 +1426,7 @@ chatStarted.current = true;
 
           {loading && (
             <div className="wc-row">
-              <div className="wc-ava">🌿</div>
+              <OwlAvatar size={40} />
               <div
                 className="wc-bub bot"
                 aria-label={t.typing}
