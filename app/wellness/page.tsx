@@ -468,38 +468,30 @@ export default function WellnessPage() {
                   {step.buttonText}
                 </a>
               )}
+              {step.type === "assessment" && assessmentCompleted && (
+                <button
+                  type="button"
+                  onClick={handleResetAssessment}
+                  style={{
+                    width: "100%",
+                    marginTop: "10px",
+                    padding: "10px 18px",
+                    borderRadius: "10px",
+                    border: "1px solid var(--border)",
+                    background: "var(--surface)",
+                    color: "var(--muted)",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                  }}
+                >
+                  ↻ {lang === "en" ? "Reset Assessment" : "รีเซ็ตแบบประเมิน"}
+                </button>
+              )}
             </section>
           );
         })}
       </div>
-
-      {/* RESET ASSESSMENT */}
-      {assessmentCompleted && (
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            marginTop: "20px",
-          }}
-        >
-          <button
-            type="button"
-            onClick={handleResetAssessment}
-            style={{
-              padding: "10px 18px",
-              borderRadius: "10px",
-              border: "1px solid var(--border)",
-              background: "var(--surface)",
-              color: "var(--muted)",
-              fontSize: "13px",
-              fontWeight: "600",
-              cursor: "pointer",
-            }}
-          >
-            ↻ {lang === "en" ? "Reset Assessment" : "รีเซ็ตแบบประเมิน"}
-          </button>
-        </div>
-      )}
     </>
   );
 }
