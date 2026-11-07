@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
@@ -22,11 +23,13 @@ import {
 
 export const metadata: Metadata = {
   title: "Thailand Humanoid Atlas | Embodied AI & Robotics Database",
-  description: "Explore Thailand's humanoid, social, and service robotics ecosystem. Trace robot models, research contributions, public perspectives, physical inventories, and AI-powered ecosystem maps.",
+  description:
+    "Explore Thailand's humanoid, social, and service robotics ecosystem. Trace robot models, research contributions, public perspectives, physical inventories, and AI-powered ecosystem maps.",
   alternates: { canonical: "/" },
   openGraph: {
     title: "Thailand Humanoid Atlas | Embodied AI & Robotics Database",
-    description: "Explore Thailand's humanoid, social, and service robotics ecosystem. Trace robot models, research contributions, public perspectives, physical inventories, and AI-powered ecosystem maps.",
+    description:
+      "Explore Thailand's humanoid, social, and service robotics ecosystem. Trace robot models, research contributions, public perspectives, physical inventories, and AI-powered ecosystem maps.",
     url: "/",
     siteName: "Thailand Humanoid Atlas",
     images: [
@@ -43,11 +46,11 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Thailand Humanoid Atlas | Embodied AI & Robotics Database",
-    description: "Explore Thailand's humanoid, social, and service robotics ecosystem. Trace robot models, research contributions, public perspectives, physical inventories, and AI-powered ecosystem maps.",
+    description:
+      "Explore Thailand's humanoid, social, and service robotics ecosystem. Trace robot models, research contributions, public perspectives, physical inventories, and AI-powered ecosystem maps.",
     images: ["/logo.png"]
   }
 };
-
 
 export const dynamic = "force-dynamic";
 
@@ -80,14 +83,30 @@ export default async function OverviewPage() {
       pipelineRun
     ] = await Promise.all([
       prisma.sourceRecord.count(),
-      prisma.sourceRecord.count({ where: { relevanceStatus: "ACCEPTED" } }),
+      prisma.sourceRecord.count({
+        where: { relevanceStatus: "ACCEPTED" }
+      }),
       prisma.robotModel.count(),
       prisma.contribution.count(),
       prisma.ownedInventory.count(),
-      prisma.submittedData.count({ where: { status: { in: ["QUEUED", "NEEDS_REVIEW"] } } }),
-      prisma.sourceRecord.groupBy({ by: ["platform"], _count: { _all: true } }),
-      prisma.sourceRecord.aggregate({ _min: { publishedAt: true }, _max: { publishedAt: true } }),
-      prisma.pipelineRun.findFirst({ orderBy: { startedAt: "desc" } })
+      prisma.submittedData.count({
+        where: {
+          status: {
+            in: ["QUEUED", "NEEDS_REVIEW"]
+          }
+        }
+      }),
+      prisma.sourceRecord.groupBy({
+        by: ["platform"],
+        _count: { _all: true }
+      }),
+      prisma.sourceRecord.aggregate({
+        _min: { publishedAt: true },
+        _max: { publishedAt: true }
+      }),
+      prisma.pipelineRun.findFirst({
+        orderBy: { startedAt: "desc" }
+      })
     ]);
 
     sourcesCount = sCount;
@@ -96,30 +115,52 @@ export default async function OverviewPage() {
     contributionsCount = cCount;
     inventoryCount = iCount;
     pendingReviewsCount = prCount;
-    
+
     if (plts && plts.length > 0) {
       platforms = [...plts]
-        .sort((a, b) => (b._count?._all ?? 0) - (a._count?._all ?? 0))
+        .sort(
+          (a, b) =>
+            (b._count?._all ?? 0) - (a._count?._all ?? 0)
+        )
         .slice(0, 9);
     }
-    
+
     if (pipelineRun) {
       latestPipelineRun = pipelineRun;
     }
 
-    const minYear = dateRange._min.publishedAt ? dateRange._min.publishedAt.getFullYear() : "N/A";
-    const maxYear = dateRange._max.publishedAt ? dateRange._max.publishedAt.getFullYear() : "N/A";
-    yearRangeStr = minYear !== "N/A" || maxYear !== "N/A" ? `${minYear} – ${maxYear}` : "No date data";
+    const minYear = dateRange._min.publishedAt
+      ? dateRange._min.publishedAt.getFullYear()
+      : "N/A";
+
+    const maxYear = dateRange._max.publishedAt
+      ? dateRange._max.publishedAt.getFullYear()
+      : "N/A";
+
+    yearRangeStr =
+      minYear !== "N/A" || maxYear !== "N/A"
+        ? `${minYear} – ${maxYear}`
+        : "No date data";
+
   } catch (error) {
-    console.error("Database connection failed in overview page:", error);
+    console.error(
+      "Database connection failed in overview page:",
+      error
+    );
     dbOffline = true;
   }
 
-  // Format date for Pipeline status card
-  let lastUpdatedStr = lang === "th" ? "ล่าสุด: ไม่มีข้อมูล" : "Last: N/A";
+  let lastUpdatedStr =
+    lang === "th" ? "ล่าสุด: ไม่มีข้อมูล" : "Last: N/A";
+
   if (latestPipelineRun?.finishedAt) {
-    const finishedDate = new Date(latestPipelineRun.finishedAt);
-    lastUpdatedStr = `${lang === "th" ? "ล่าสุด" : "Last"}: ${finishedDate.getMonth() + 1}/${finishedDate.getDate()}/${finishedDate.getFullYear()}`;
+    const finishedDate = new Date(
+      latestPipelineRun.finishedAt
+    );
+
+    lastUpdatedStr = `${
+      lang === "th" ? "ล่าสุด" : "Last"
+    }: ${finishedDate.getMonth() + 1}/${finishedDate.getDate()}/${finishedDate.getFullYear()}`;
   }
 
   const cliCommands = [
@@ -128,11 +169,19 @@ export default async function OverviewPage() {
     "python -m humanoid_atlas ingest seeds --file data/seeds/inventory.seed.yml"
   ];
 
-  const formatMetric = (value: number | null) => value?.toLocaleString() ?? "Unavailable";
+  const formatMetric = (value: number | null) =>
+    value?.toLocaleString() ?? "Unavailable";
 
   return (
-    <main className={`atlas-page ${lang === "en" ? "lang-en" : "lang-th"}`}>
-      <style dangerouslySetInnerHTML={{ __html: `
+    <main
+      className={`atlas-page ${
+        lang === "en" ? "lang-en" : "lang-th"
+      }`}
+    >
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+
         .atlas-page {
           display: grid;
           grid-template-areas:
@@ -152,6 +201,7 @@ export default async function OverviewPage() {
         .mobile-only {
           display: none;
         }
+
         .desktop-only {
           display: inline;
         }
@@ -200,61 +250,59 @@ export default async function OverviewPage() {
         }
 
         .topbar .actions {
-  display: flex;
-  gap: 9px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  align-items: center;
-  padding-top: 0;
-}
+          display: flex;
+          gap: 9px;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+          align-items: center;
+          padding-top: 0;
+        }
 
-/* English: Keep all 4 buttons in one row */
-.atlas-page.lang-en .topbar .actions {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 10px;
-  justify-content: flex-end;
-  align-items: center;
-  width: max-content;
-  max-width: 100%;
-  flex-shrink: 0;
-}
+        .atlas-page.lang-en .topbar .actions {
+          display: flex;
+          flex-wrap: nowrap;
+          gap: 10px;
+          justify-content: flex-end;
+          align-items: center;
+          width: max-content;
+          max-width: 100%;
+          flex-shrink: 0;
+        }
 
-.atlas-page.lang-en .topbar .actions .button {
-  white-space: nowrap;
-  flex-shrink: 0;
-  justify-content: center;
-  min-height: 42px;
-  padding: 0 10px;
-  font-size: inherit;
-  border-radius: 7px;
-}
+        .atlas-page.lang-en .topbar .actions .button {
+          white-space: nowrap;
+          flex-shrink: 0;
+          justify-content: center;
+          min-height: 42px;
+          padding: 0 10px;
+          font-size: inherit;
+          border-radius: 7px;
+        }
 
-/* Common button styling */
-.topbar .actions .button {
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 42px;
-  border-radius: 7px;
-  border-color: rgba(177, 143, 47, 0.35);
-  color: #08150f;
-  box-shadow: 0 8px 18px rgba(112, 92, 48, 0.07);
-  transition: all 0.2s ease;
-}
+        .topbar .actions .button {
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          min-height: 42px;
+          border-radius: 7px;
+          border-color: rgba(177, 143, 47, 0.35);
+          color: #08150f;
+          box-shadow: 0 8px 18px rgba(112, 92, 48, 0.07);
+          transition: all 0.2s ease;
+        }
 
-.topbar .actions .button.primary {
-  color: #ffffff;
-}
+        .topbar .actions .button.primary {
+          color: #ffffff;
+        }
 
-.topbar .actions .button:hover {
-  transform: translateY(-1px);
-}
+        .topbar .actions .button:hover {
+          transform: translateY(-1px);
+        }
 
-.topbar .actions .button > span:first-of-type {
-  display: none;
-}
+        .topbar .actions .button > span:first-of-type {
+          display: none;
+        }
 
         .dashboard-stack {
           grid-area: stack;
@@ -264,7 +312,6 @@ export default async function OverviewPage() {
           max-width: 760px;
         }
 
-        /* Alert styling */
         .alert {
           background: rgba(156, 46, 38, 0.08);
           border: 1px solid rgba(156, 46, 38, 0.2);
@@ -276,13 +323,13 @@ export default async function OverviewPage() {
           line-height: 1.5;
         }
 
-        /* Metrics grid */
         .metrics-row {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 14px;
         }
 
+        /* Clickable metric cards */
         .metric-card {
           background: var(--surface);
           border: 1px solid rgba(74, 124, 89, 0.22);
@@ -294,12 +341,20 @@ export default async function OverviewPage() {
           align-items: flex-start;
           box-shadow: 0 10px 24px rgba(31, 37, 33, 0.1);
           transition: all 0.2s ease;
+          text-decoration: none;
+          color: #07150f;
+          cursor: pointer;
         }
 
         .metric-card:hover {
           transform: translateY(-2px);
           box-shadow: 0 8px 20px rgba(74, 124, 89, 0.08);
           border-color: var(--accent);
+        }
+
+        .metric-card:focus-visible {
+          outline: 3px solid var(--accent);
+          outline-offset: 3px;
         }
 
         .metric-icon {
@@ -340,7 +395,6 @@ export default async function OverviewPage() {
           margin-top: 4px;
         }
 
-        /* Status row: Glassmorphism cards */
         .status-row {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -395,7 +449,6 @@ export default async function OverviewPage() {
           display: block;
         }
 
-        /* Platform Ingestion Card */
         .platform-card {
           background: var(--surface);
           border: 1px solid rgba(74, 124, 89, 0.18);
@@ -475,7 +528,6 @@ export default async function OverviewPage() {
           opacity: 0.4;
         }
 
-        /* Robot stage */
         .robot-stage {
           grid-area: robot;
           background: transparent;
@@ -560,7 +612,6 @@ export default async function OverviewPage() {
           transform-origin: center top;
         }
 
-        /* Terminal panel empty state */
         .terminal-panel {
           grid-area: terminal;
           background: #08130f;
@@ -662,12 +713,15 @@ export default async function OverviewPage() {
             flex-direction: column;
             gap: 24px;
           }
+
           .mobile-only {
             display: inline;
           }
+
           .desktop-only {
             display: none;
           }
+
           .topbar {
             display: block;
             border-bottom: none;
@@ -675,6 +729,7 @@ export default async function OverviewPage() {
             margin-bottom: 0;
             gap: 4px;
           }
+
           .topbar h1 {
             font-size: 22px;
             font-weight: 800;
@@ -682,10 +737,12 @@ export default async function OverviewPage() {
             margin: 0;
             color: #2e3230;
           }
+
           .topbar .subtitle,
           .topbar .actions {
             display: none !important;
           }
+
           .robot-stage {
             height: 180px;
             min-height: 180px;
@@ -700,58 +757,73 @@ export default async function OverviewPage() {
             padding: 0;
             box-shadow: none;
           }
+
           .robot-stage .orbit,
           .robot-stage .robot-glow {
             display: none !important;
           }
+
           .robot-model-wrapper {
             width: 100%;
             height: 100%;
             transform: none;
           }
+
           .metrics-row {
             grid-template-columns: repeat(2, 1fr);
             gap: 12px;
           }
+
           .metric-card {
             padding: 12px 14px;
             gap: 10px;
             border-radius: 8px;
           }
+
           .metric-icon {
             width: 36px;
             height: 36px;
           }
+
           .metric-card strong {
             font-size: 20px;
           }
+
           .status-row {
             grid-template-columns: 1fr;
             gap: 12px;
           }
+
           .glass-card {
             min-height: auto;
             padding: 14px 16px;
           }
+
           .platform-grid {
             grid-template-columns: repeat(2, 1fr);
             gap: 8px;
           }
+
           .platform-item {
             padding: 10px;
             gap: 8px;
           }
+
           .platform-item strong {
             font-size: 16px;
           }
+
           .command-grid {
             grid-template-columns: 1fr;
             gap: 12px;
           }
         }
-      `}} />
 
-      {/* 3D Immersive Robot Embodiment View */}
+      `
+        }}
+      />
+
+      {/* Robot View */}
       <section className="robot-stage">
         <div className="orbit orbit-one" />
         <div className="orbit orbit-two" />
@@ -762,131 +834,194 @@ export default async function OverviewPage() {
         </div>
       </section>
 
-      {/* Header Section */}
+      {/* Header */}
       <header className="topbar">
         <div>
           <p className="eyebrow">
-            <span className="desktop-only">{lang === "th" ? "คอนโซลวิจัยระบบ" : "Research Console"}</span>
-            <span className="mobile-only">{lang === "th" ? "คลังข้อมูลประเทศไทย" : "THAILAND ATLAS"}</span>
+            <span className="desktop-only">
+              {lang === "th"
+                ? "คอนโซลวิจัยระบบ"
+                : "Research Console"}
+            </span>
+
+            <span className="mobile-only">
+              {lang === "th"
+                ? "คลังข้อมูลประเทศไทย"
+                : "THAILAND ATLAS"}
+            </span>
           </p>
+
           <h1>
             <span className="desktop-only">
               {lang === "th" ? "ภาพรวม" : "Overview"}{" "}
-              <span>& {lang === "th" ? "สรุปคลังข้อมูล" : "Corpus Summary"}</span>
+              <span>
+                & {lang === "th"
+                  ? "สรุปคลังข้อมูล"
+                  : "Corpus Summary"}
+              </span>
             </span>
+
             <span className="mobile-only">
-              {lang === "th" ? "ภาพรวมและสรุปคลังข้อมูล" : "OVERVIEW & CORPUS SUMMARY"}
+              {lang === "th"
+                ? "ภาพรวมและสรุปคลังข้อมูล"
+                : "OVERVIEW & CORPUS SUMMARY"}
             </span>
           </h1>
+
           <p className="subtitle">{t.overviewDesc}</p>
         </div>
 
         <div className="actions">
           <Link className="button primary" href="/data-pulls">
             <Play size={14} fill="currentColor" />
-            <span style={{ fontSize: "10px" }}>▶</span> {t.runDataPull}
+            <span style={{ fontSize: "10px" }}>▶</span>
+            {t.runDataPull}
           </Link>
+
           <Link className="button" href="/database">
             <FolderOpen size={15} color="#d19a1b" />
-            <span>📂</span> {t.browseDatabase}
+            <span>📂</span>
+            {t.browseDatabase}
           </Link>
+
           <Link className="button" href="/submit-data">
             <Send size={15} color="#9a7bd8" />
-            <span>📨</span> {t.submitRecord}
+            <span>📨</span>
+            {t.submitRecord}
           </Link>
+
           <Link className="button" href="/admin">
             <ClipboardList size={15} color="#b17c56" />
-            <span>📋</span> {t.reviewQueue}{" "}
-            <span style={{ color: "var(--success)", fontWeight: "800" }}>
+            <span>📋</span>
+            {t.reviewQueue}{" "}
+            <span
+              style={{
+                color: "var(--success)",
+                fontWeight: "800"
+              }}
+            >
               ({pendingReviewsCount ?? "Unavailable"})
             </span>
           </Link>
         </div>
       </header>
 
-      {/* Main Dashboard stack */}
+      {/* Main Dashboard */}
       <section className="dashboard-stack">
-        {/* Database Offline warning alert container */}
+
         {dbOffline && (
           <div className="alert">
-            <strong>Database Offline:</strong> Live PostgreSQL is unavailable. Overview metrics are not being substituted.
+            <strong>Database Offline:</strong> Live PostgreSQL is
+            unavailable. Overview metrics are not being substituted.
           </div>
         )}
 
         {/* Primary Metrics Row */}
         <div className="metrics-row">
-          {/* Metric 1 */}
-          <article className="metric-card">
+
+          {/* Total Sources */}
+          <Link href="/database" className="metric-card">
             <div className="metric-icon">
               <Database size={18} />
             </div>
+
             <div>
               <p>{t.totalSources}</p>
               <strong>{formatMetric(sourcesCount)}</strong>
-              <small>{lang === "th" ? `อนุมัติแล้ว: ${formatMetric(acceptedCount)}` : `Accepted: ${formatMetric(acceptedCount)}`}</small>
+              <small>
+                {lang === "th"
+                  ? `อนุมัติแล้ว: ${formatMetric(acceptedCount)}`
+                  : `Accepted: ${formatMetric(acceptedCount)}`}
+              </small>
             </div>
-          </article>
+          </Link>
 
-          {/* Metric 2 */}
-          <article className="metric-card">
+          {/* Robot Models */}
+          <Link href="/robots" className="metric-card">
             <div className="metric-icon">
               <Bot size={18} />
             </div>
+
             <div>
               <p>{t.robotModels}</p>
               <strong>{formatMetric(robotsCount)}</strong>
-              <small>{lang === "th" ? "รุ่นที่ลงทะเบียน" : "Registered models"}</small>
+              <small>
+                {lang === "th"
+                  ? "รุ่นที่ลงทะเบียน"
+                  : "Registered models"}
+              </small>
             </div>
-          </article>
+          </Link>
 
-          {/* Metric 3 */}
-          <article className="metric-card">
+          {/* Owned Units */}
+          <Link href="/inventory" className="metric-card">
             <div className="metric-icon">
               <Box size={18} />
             </div>
+
             <div>
               <p>{t.ownedUnits}</p>
               <strong>{formatMetric(inventoryCount)}</strong>
-              <small>{lang === "th" ? "คลังอุปกรณ์ของทีม" : "Team inventory"}</small>
+              <small>
+                {lang === "th"
+                  ? "คลังอุปกรณ์ของทีม"
+                  : "Team inventory"}
+              </small>
             </div>
-          </article>
+          </Link>
 
-          {/* Metric 4 */}
-          <article className="metric-card">
+          {/* Contributors */}
+          <Link href="/contributions" className="metric-card">
             <div className="metric-icon">
               <Users size={18} />
             </div>
+
             <div>
               <p>{t.contributors}</p>
               <strong>{formatMetric(contributionsCount)}</strong>
-              <small>{lang === "th" ? "คลังโค้ดและเอกสาร" : "Repos & papers"}</small>
+              <small>
+                {lang === "th"
+                  ? "คลังโค้ดและเอกสาร"
+                  : "Repos & papers"}
+              </small>
             </div>
-          </article>
+          </Link>
+
         </div>
 
         {/* Secondary Status Row */}
         <div className="status-row">
-          {/* Pipeline Status */}
+
           <div className="glass-card">
             <p className="card-label">{t.pipelineStatus}</p>
+
             {latestPipelineRun ? (
               <div className="success-pill">
-                {latestPipelineRun.pipelineName}: {latestPipelineRun.status}
+                {latestPipelineRun.pipelineName}:{" "}
+                {latestPipelineRun.status}
               </div>
             ) : (
-              <div className="success-pill" style={{ background: "rgba(100, 116, 139, 0.1)", color: "#94a3b8", borderColor: "#475569" }}>
+              <div
+                className="success-pill"
+                style={{
+                  background: "rgba(100, 116, 139, 0.1)",
+                  color: "#94a3b8",
+                  borderColor: "#475569"
+                }}
+              >
                 No active runs
               </div>
             )}
+
             <small>{lastUpdatedStr}</small>
           </div>
 
-          {/* Temporal Coverage */}
           <div className="glass-card">
             <p className="card-label">{t.temporalCoverage}</p>
             <h3>{yearRangeStr}</h3>
             <small>{t.activeMediaPubs}</small>
           </div>
+
         </div>
 
         {/* Sources by Ingestion Platform */}
@@ -895,7 +1030,10 @@ export default async function OverviewPage() {
 
           <div className="platform-grid">
             {platforms.map((p) => {
-              const name = String(p.platform || "unknown").toLowerCase();
+              const name = String(
+                p.platform || "unknown"
+              ).toLowerCase();
+
               let logoClass = "website";
               let IconComponent = Globe;
 
@@ -911,14 +1049,23 @@ export default async function OverviewPage() {
               }
 
               return (
-                <div className={`platform-item ${logoClass}`} key={p.platform || "unknown"}>
+                <div
+                  className={`platform-item ${logoClass}`}
+                  key={p.platform || "unknown"}
+                >
                   <span>
                     <IconComponent size={16} />
                   </span>
+
                   <div>
-                    <p style={{ textTransform: "capitalize" }}>{p.platform || "unknown"}</p>
-                    <strong>{p._count?._all ?? p._count ?? 0}</strong>
+                    <p style={{ textTransform: "capitalize" }}>
+                      {p.platform || "unknown"}
+                    </p>
+                    <strong>
+                      {p._count?._all ?? p._count ?? 0}
+                    </strong>
                   </div>
+
                   <div className="sparkline" />
                 </div>
               );
@@ -926,11 +1073,11 @@ export default async function OverviewPage() {
           </div>
         </div>
 
-
       </section>
 
       {/* Database Empty State Guide */}
       <section className="terminal-panel">
+
         <div className="terminal-header">
           <h3>{t.emptyStateTitle}</h3>
           <CopyCommands commands={cliCommands} />
@@ -939,24 +1086,33 @@ export default async function OverviewPage() {
         <p>{t.emptyStateDesc}</p>
 
         <div className="command-grid">
+
           <div className="command-card">
             <div className="step">1</div>
             <strong>Initialize DB tables</strong>
             <code>python -m humanoid_atlas db init</code>
           </div>
+
           <div className="command-card">
             <div className="step">2</div>
             <strong>Seed robot models</strong>
-            <code>python -m humanoid_atlas ingest seeds --file data/seeds/robot_models.seed.yml</code>
+            <code>
+              python -m humanoid_atlas ingest seeds --file data/seeds/robot_models.seed.yml
+            </code>
           </div>
+
           <div className="command-card">
             <div className="step">3</div>
             <strong>Seed inventory and relations</strong>
-            <code>python -m humanoid_atlas ingest seeds --file data/seeds/inventory.seed.yml</code>
+            <code>
+              python -m humanoid_atlas ingest seeds --file data/seeds/inventory.seed.yml
+            </code>
           </div>
+
         </div>
       </section>
 
+      {/* SEO Structured Data */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -968,7 +1124,8 @@ export default async function OverviewPage() {
                 "@id": "https://humanoid.or.th/#website",
                 "url": "https://humanoid.or.th/",
                 "name": "Thailand Humanoid Atlas",
-                "description": "Research database, registry, and analysis platform tracking the humanoid, social, and service robotics ecosystem in Thailand.",
+                "description":
+                  "Research database, registry, and analysis platform tracking the humanoid, social, and service robotics ecosystem in Thailand.",
                 "publisher": {
                   "@id": "https://humanoid.or.th/#organization"
                 }
@@ -987,13 +1144,13 @@ export default async function OverviewPage() {
                 "url": "https://humanoid.or.th/",
                 "applicationCategory": "ResearchApplication",
                 "operatingSystem": "All",
-                "description": "An interactive, open-source database cataloging humanoid robot models, academic contributions, public media sentiment, and physical inventory assets in Thailand."
+                "description":
+                  "An interactive, open-source database cataloging humanoid robot models, academic contributions, public media sentiment, and physical inventory assets in Thailand."
               }
             ]
           })
         }}
       />
     </main>
-
   );
 }
