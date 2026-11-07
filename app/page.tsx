@@ -131,7 +131,7 @@ export default async function OverviewPage() {
   const formatMetric = (value: number | null) => value?.toLocaleString() ?? "Unavailable";
 
   return (
-    <main className="atlas-page">
+    <main className={`atlas-page ${lang === "en" ? "lang-en" : "lang-th"}`}>
       <style dangerouslySetInnerHTML={{ __html: `
         .atlas-page {
           display: grid;
@@ -200,37 +200,61 @@ export default async function OverviewPage() {
         }
 
         .topbar .actions {
-          display: flex;
-          gap: 9px;
-          flex-wrap: wrap;
-          justify-content: flex-end;
-          padding-top: 0;
-        }
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  padding-top: 0;
+}
 
-        .topbar .actions .button {
-          font-weight: 700;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          min-height: 42px;
-          border-radius: 7px;
-          border-color: rgba(177, 143, 47, 0.35);
-          color: #08150f;
-          box-shadow: 0 8px 18px rgba(112, 92, 48, 0.07);
-          transition: all 0.2s ease;
-        }
+/* English: Keep all 4 buttons in one row */
+.atlas-page.lang-en .topbar .actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+  justify-content: flex-end;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  flex-shrink: 0;
+}
 
-        .topbar .actions .button.primary {
-          color: #ffffff;
-        }
+.atlas-page.lang-en .topbar .actions .button {
+  white-space: nowrap;
+  flex-shrink: 0;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 10px;
+  font-size: inherit;
+  border-radius: 7px;
+}
 
-        .topbar .actions .button:hover {
-          transform: translateY(-1px);
-        }
+/* Common button styling */
+.topbar .actions .button {
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 42px;
+  border-radius: 7px;
+  border-color: rgba(177, 143, 47, 0.35);
+  color: #08150f;
+  box-shadow: 0 8px 18px rgba(112, 92, 48, 0.07);
+  transition: all 0.2s ease;
+}
 
-        .topbar .actions .button > span:first-of-type {
-          display: none;
-        }
+.topbar .actions .button.primary {
+  color: #ffffff;
+}
+
+.topbar .actions .button:hover {
+  transform: translateY(-1px);
+}
+
+.topbar .actions .button > span:first-of-type {
+  display: none;
+}
 
         .dashboard-stack {
           grid-area: stack;
