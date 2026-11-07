@@ -1,358 +1,190 @@
-import { prisma } from "@/lib/prisma";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { cookies } from "next/headers";
 import { getTranslation } from "@/lib/translations";
+import { CATEGORIES, fmtPct, withPercent, type RowWithPct } from "@/lib/dashboardStats";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Robotics Ecosystem Dashboard",
-  description: "Aggregate dashboard for Thailand humanoid robotics records, robot types, sources, contributions, perspective themes, and confidence levels.",
-  alternates: { canonical: "/dashboard" }
+  description:
+    "Aggregate dashboard for Thailand humanoid robotics records, robot types, sources, contributions, perspective themes, and confidence levels.",
+  alternates: { canonical: "/dashboard" },
 };
 
-type Lang = "en" | "th";
-type Row = { label: string; count: number };
+const TOP_N = 5;
 
-const LABELS = {
-  en: {
-    locations: "Robot Origin Locations",
-    robotTypes: "Robot Categories",
-    sourceTypes: "Source Record Types",
-    embodiment: "Robot Embodiment Levels",
-    contributions: "Contribution Types",
-    themes: "Perspective Themes",
-    confidenceTitle: "Extracted Confidence Distribution",
-    annotations: "Perspective Annotations",
-    sources: "Source Relevance Confidence",
-    high: "High (Confidence ≥ 0.8)",
-    moderate: "Moderate (0.5 ≤ Confidence < 0.8)",
-    low: "Low (Confidence < 0.5)",
-    unknown: "Unknown",
-    empty: "No statistics available.",
-    items: "items",
-    total: "total",
-    offline: "Database Offline:",
-    offlineMsg: "Live PostgreSQL is unavailable. This dashboard is not substituting example records."
-  },
-  th: {
-    locations: "ประเทศต้นกำเนิดของหุ่นยนต์",
-    robotTypes: "หมวดหมู่หุ่นยนต์",
-    sourceTypes: "ประเภทแหล่งข้อมูล",
-    embodiment: "ระดับ Embodiment ของหุ่นยนต์",
-    contributions: "ประเภทการมีส่วนร่วม",
-    themes: "ธีมมุมมอง",
-    confidenceTitle: "การกระจายระดับความเชื่อมั่นที่สกัดได้",
-    annotations: "Perspective Annotations",
-    sources: "ความเชื่อมั่นด้านความเกี่ยวข้องของแหล่งข้อมูล",
-    high: "สูง (Confidence ≥ 0.8)",
-    moderate: "ปานกลาง (0.5 ≤ Confidence < 0.8)",
-    low: "ต่ำ (Confidence < 0.5)",
-    unknown: "ไม่ระบุ",
-    empty: "ยังไม่มีข้อมูลสถิติ",
-    items: "รายการ",
-    total: "ทั้งหมด",
-    offline: "ฐานข้อมูลออฟไลน์:",
-    offlineMsg: "ไม่สามารถเชื่อมต่อ PostgreSQL ได้ แดชบอร์ดนี้จะไม่แทนที่ด้วยข้อมูลตัวอย่าง"
-  }
-} as const;
-
-// Turn a Prisma groupBy result into rows sorted from highest to lowest count.
-function toRows(arr: any[], key: string, unknownLabel: string): Row[] {
-  return arr
-    .map((item) => ({
-      label: String(item[key] ?? unknownLabel).replace(/_/g, " "),
-      count: item._count._all as number
-    }))
-    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
-}
-
-const cardStyle: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  height: "100%",
-  margin: 0
-};
-
-function CardHeader({ title, badge }: { title: string; badge: string }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap: "12px",
-        paddingBottom: "12px",
-        marginBottom: "14px",
-        borderBottom: "1px solid var(--surface-muted)"
-      }}
-    >
-      <h2 style={{ margin: 0, fontSize: "17px" }}>{title}</h2>
-      <span
-        style={{
-          fontSize: "12px",
-          fontWeight: 600,
-          padding: "3px 10px",
-          borderRadius: "999px",
-          background: "var(--surface-muted)",
-          whiteSpace: "nowrap"
-        }}
-      >
-        {badge}
-      </span>
-    </div>
-  );
-}
-
-function DistributionCard({
-  title,
-  rows,
-  t
-}: {
-  title: string;
-  rows: Row[];
-  t: (typeof LABELS)[Lang];
-}) {
-  const total = rows.reduce((acc, r) => acc + r.count, 0);
-
-  return (
-    <section className="panel" style={cardStyle}>
-      <CardHeader title={title} badge={`${total.toLocaleString()} ${t.total}`} />
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "14px",
-          maxHeight: "380px",
-          overflowY: "auto",
-          paddingRight: "6px"
-        }}
-      >
-        {rows.map((row, index) => {
-          const pct = total > 0 ? (row.count / total) * 100 : 0;
-          return (
-            <div key={row.label}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: "10px",
-                  fontSize: "13px",
-                  marginBottom: "5px"
-                }}
-              >
-                <span style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-                  <span
-                    style={{
-                      flexShrink: 0,
-                      width: "20px",
-                      height: "20px",
-                      borderRadius: "50%",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      background: index === 0 ? "var(--accent)" : "var(--surface-muted)",
-                      color: index === 0 ? "#fff" : "inherit"
-                    }}
-                  >
-                    {index + 1}
-                  </span>
-                  <span style={{ textTransform: "capitalize", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {row.label}
-                  </span>
-                </span>
-                <strong style={{ whiteSpace: "nowrap" }}>
-                  {row.count.toLocaleString()} ({pct.toFixed(1)}%)
-                </strong>
-              </div>
-              <div style={{ height: "8px", background: "var(--surface-muted)", borderRadius: "4px", overflow: "hidden" }}>
-                <div style={{ width: `${pct}%`, height: "100%", background: "var(--accent)" }} />
-              </div>
-            </div>
-          );
-        })}
-        {!rows.length && <div className="empty">{t.empty}</div>}
-      </div>
-    </section>
-  );
-}
-
-function ConfidenceCard({
-  title,
-  total,
-  buckets,
-  t
-}: {
-  title: string;
-  total: number;
-  buckets: { label: string; count: number; color: string }[];
-  t: (typeof LABELS)[Lang];
-}) {
-  return (
-    <section className="panel" style={cardStyle}>
-      <CardHeader title={title} badge={`${total.toLocaleString()} ${t.total}`} />
-      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-        {buckets.map((bucket) => {
-          const pct = total > 0 ? (bucket.count / total) * 100 : 0;
-          return (
-            <div key={bucket.label}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: "10px",
-                  fontSize: "13px",
-                  marginBottom: "5px"
-                }}
-              >
-                <span>{bucket.label}</span>
-                <strong style={{ whiteSpace: "nowrap" }}>
-                  {bucket.count.toLocaleString()} ({pct.toFixed(1)}%)
-                </strong>
-              </div>
-              <div style={{ height: "8px", background: "var(--surface-muted)", borderRadius: "4px", overflow: "hidden" }}>
-                <div style={{ width: `${pct}%`, height: "100%", background: bucket.color }} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
+type Loaded = { slug: string; rows: RowWithPct[]; total: number };
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
-  const lang = (cookieStore.get("lang")?.value || "en") as Lang;
-  const tr = getTranslation(lang);
-  const t = LABELS[lang] ?? LABELS.en;
+  const lang = (cookieStore.get("lang")?.value || "en") as "en" | "th";
+  const t = getTranslation(lang);
 
-  let data = {
-    locations: [] as any[],
-    robotTypes: [] as any[],
-    sourceTypes: [] as any[],
-    embodimentLevels: [] as any[],
-    contributionTypes: [] as any[],
-    themes: [] as any[],
-    highConfidenceAnn: 0,
-    medConfidenceAnn: 0,
-    lowConfidenceAnn: 0,
-    highConfidenceSrc: 0,
-    medConfidenceSrc: 0,
-    lowConfidenceSrc: 0,
-    dbOffline: false
-  };
+  let loaded: Loaded[] = [];
+  let dbOffline = false;
 
   try {
-    const [
-      locations,
-      robotTypes,
-      sourceTypes,
-      embodimentLevels,
-      contributionTypes,
-      themes,
-      highConfidenceAnn,
-      medConfidenceAnn,
-      lowConfidenceAnn,
-      highConfidenceSrc,
-      medConfidenceSrc,
-      lowConfidenceSrc
-    ] = await Promise.all([
-      prisma.robotModel.groupBy({ by: ["countryOfOrigin"], _count: { _all: true } }),
-      prisma.robotModel.groupBy({ by: ["robotType"], _count: { _all: true } }),
-      prisma.sourceRecord.groupBy({ by: ["sourceType"], _count: { _all: true } }),
-      prisma.robotModel.groupBy({ by: ["embodimentLevel"], _count: { _all: true } }),
-      prisma.contribution.groupBy({ by: ["contributionType"], _count: { _all: true } }),
-      prisma.perspectiveAnnotation.groupBy({ by: ["perspectiveTheme"], _count: { _all: true } }),
-      // Confidence buckets
-      prisma.perspectiveAnnotation.count({ where: { confidence: { gte: 0.8 } } }),
-      prisma.perspectiveAnnotation.count({ where: { confidence: { gte: 0.5, lt: 0.8 } } }),
-      prisma.perspectiveAnnotation.count({ where: { confidence: { lt: 0.5 } } }),
-      prisma.sourceRecord.count({ where: { relevanceConfidence: { gte: 0.8 } } }),
-      prisma.sourceRecord.count({ where: { relevanceConfidence: { gte: 0.5, lt: 0.8 } } }),
-      prisma.sourceRecord.count({ where: { relevanceConfidence: { lt: 0.5 } } })
-    ]);
-
-    data = {
-      locations,
-      robotTypes,
-      sourceTypes,
-      embodimentLevels,
-      contributionTypes,
-      themes,
-      highConfidenceAnn,
-      medConfidenceAnn,
-      lowConfidenceAnn,
-      highConfidenceSrc,
-      medConfidenceSrc,
-      lowConfidenceSrc,
-      dbOffline: false
-    };
+    const results = await Promise.all(CATEGORIES.map((c) => c.load()));
+    loaded = CATEGORIES.map((c, i) => ({ slug: c.slug, ...withPercent(results[i], c.ordered) }));
   } catch (error) {
     console.error("Database connection failed in dashboard:", error);
-    data = { ...data, dbOffline: true };
+    dbOffline = true;
+    loaded = CATEGORIES.map((c) => ({ slug: c.slug, rows: [], total: 0 }));
   }
 
-  const totalAnnotations = data.highConfidenceAnn + data.medConfidenceAnn + data.lowConfidenceAnn;
-  const totalSources = data.highConfidenceSrc + data.medConfidenceSrc + data.lowConfidenceSrc;
+  const by = (slug: string) => loaded.find((l) => l.slug === slug)!;
+  const barColor = (r: RowWithPct) => r.color || "var(--accent)";
 
-  const gridStyle: React.CSSProperties = {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
-    gap: "16px",
-    marginTop: "12px",
-    alignItems: "stretch"
-  };
+  // ----- ภาพรวม (Summary) -----
+  const kpis = [
+    { label: "Robot Models", value: by("robot-categories").total, href: "/dashboard/robot-categories" },
+    { label: "Source Records", value: by("source-types").total, href: "/dashboard/source-types" },
+    { label: "Contributions", value: by("contribution-types").total, href: "/dashboard/contribution-types" },
+    { label: "Perspective Annotations", value: by("perspective-themes").total, href: "/dashboard/perspective-themes" },
+  ];
+
+  const highAnn = by("annotation-confidence").rows[0];
+  const highSrc = by("source-confidence").rows[0];
+  const topOrigin = by("origin-locations").rows[0];
+  const topType = by("robot-categories").rows[0];
+  const topTheme = by("perspective-themes").rows[0];
+
+  const highlights = [
+    topOrigin && { k: "Most common origin", v: topOrigin.label, p: topOrigin.pct },
+    topType && { k: "Most common robot type", v: topType.label, p: topType.pct },
+    topTheme && { k: "Leading perspective theme", v: topTheme.label, p: topTheme.pct },
+    highAnn && by("annotation-confidence").total > 0 && { k: "High-confidence annotations", v: `${highAnn.count}`, p: highAnn.pct },
+    highSrc && by("source-confidence").total > 0 && { k: "High-relevance sources", v: `${highSrc.count}`, p: highSrc.pct },
+  ].filter(Boolean) as { k: string; v: string; p: number }[];
+
+  const distCats = CATEGORIES.filter((c) => !c.ordered);
+  const confCats = CATEGORIES.filter((c) => c.ordered);
 
   return (
     <>
+      <style>{`
+        .dash-card-link{color:inherit;text-decoration:none}
+        .dash-card-link:hover h2{color:var(--accent)}
+        .dash-more{font-size:12px;color:var(--accent);font-weight:600;text-decoration:none}
+        .dash-more:hover{text-decoration:underline}
+        .dash-kpi{display:block;color:inherit;text-decoration:none;transition:transform .12s ease}
+        .dash-kpi:hover{transform:translateY(-2px)}
+        @media (prefers-reduced-motion:reduce){.dash-kpi{transition:none}}
+      `}</style>
+
       <div className="topline">
         <div>
-          <h1>{tr.dashboardTitle}</h1>
-          <p className="muted">{tr.dashboardDesc}</p>
+          <h1>{t.dashboardTitle}</h1>
+          <p className="muted">{t.dashboardDesc}</p>
         </div>
       </div>
 
-      {data.dbOffline && (
+      {dbOffline && (
         <div className="notice" style={{ backgroundColor: "#fffbeb", borderLeftColor: "var(--warning)", marginBottom: "16px" }}>
-          <strong>{t.offline}</strong> {t.offlineMsg}
+          <strong>Database Offline:</strong> Live PostgreSQL is unavailable. This dashboard is not substituting example records.
         </div>
       )}
 
-      <div style={gridStyle}>
-        <DistributionCard title={t.locations} rows={toRows(data.locations, "countryOfOrigin", t.unknown)} t={t} />
-        <DistributionCard title={t.robotTypes} rows={toRows(data.robotTypes, "robotType", t.unknown)} t={t} />
-        <DistributionCard title={t.sourceTypes} rows={toRows(data.sourceTypes, "sourceType", t.unknown)} t={t} />
-        <DistributionCard title={t.embodiment} rows={toRows(data.embodimentLevels, "embodimentLevel", t.unknown)} t={t} />
-        <DistributionCard title={t.contributions} rows={toRows(data.contributionTypes, "contributionType", t.unknown)} t={t} />
-        <DistributionCard title={t.themes} rows={toRows(data.themes, "perspectiveTheme", t.unknown)} t={t} />
+      {/* SUMMARY */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginTop: "12px" }}>
+        {kpis.map((k) => (
+          <Link key={k.label} href={k.href} className="panel dash-kpi">
+            <p className="muted" style={{ fontSize: "12px" }}>{k.label}</p>
+            <p style={{ fontSize: "30px", fontWeight: 700, margin: "6px 0 2px" }}>{k.value.toLocaleString()}</p>
+            <span className="dash-more">View breakdown →</span>
+          </Link>
+        ))}
       </div>
 
-      <h2 style={{ marginTop: "28px" }}>{t.confidenceTitle}</h2>
-      <div style={gridStyle}>
-        <ConfidenceCard
-          title={t.annotations}
-          total={totalAnnotations}
-          t={t}
-          buckets={[
-            { label: t.high, count: data.highConfidenceAnn, color: "var(--success)" },
-            { label: t.moderate, count: data.medConfidenceAnn, color: "var(--warning)" },
-            { label: t.low, count: data.lowConfidenceAnn, color: "var(--low-confidence)" }
-          ]}
-        />
-        <ConfidenceCard
-          title={t.sources}
-          total={totalSources}
-          t={t}
-          buckets={[
-            { label: t.high, count: data.highConfidenceSrc, color: "var(--success)" },
-            { label: t.moderate, count: data.medConfidenceSrc, color: "var(--warning)" },
-            { label: t.low, count: data.lowConfidenceSrc, color: "var(--low-confidence)" }
-          ]}
-        />
+      {highlights.length > 0 && (
+        <section className="panel" style={{ marginTop: "16px" }}>
+          <h2>Overview</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "14px", marginTop: "10px" }}>
+            {highlights.map((h) => (
+              <div key={h.k}>
+                <p className="muted" style={{ fontSize: "12px" }}>{h.k}</p>
+                <p style={{ fontSize: "16px", fontWeight: 600, textTransform: "capitalize" }}>
+                  {h.v} <span style={{ color: "var(--accent)" }}>· {fmtPct(h.p)}</span>
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* DISTRIBUTIONS */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "16px", marginTop: "16px" }}>
+        {distCats.map((c) => {
+          const { rows, total } = by(c.slug);
+          const shown = rows.slice(0, TOP_N);
+          const rest = rows.slice(TOP_N);
+          const restPct = rest.reduce((a, r) => a + r.pct, 0);
+          return (
+            <section className="panel" key={c.slug}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "8px" }}>
+                <Link href={`/dashboard/${c.slug}`} className="dash-card-link">
+                  <h2>{c.title}</h2>
+                </Link>
+                <span className="muted" style={{ fontSize: "12px" }}>total {total}</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "10px" }}>
+                {shown.map((r) => (
+                  <div key={r.label}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "4px" }}>
+                      <span style={{ textTransform: "capitalize" }}>{r.label}</span>
+                      <strong>{fmtPct(r.pct)} <span className="muted" style={{ fontWeight: 400 }}>({r.count})</span></strong>
+                    </div>
+                    <div style={{ height: "8px", background: "var(--surface-muted)", borderRadius: "4px", overflow: "hidden" }}>
+                      <div style={{ width: `${r.pct}%`, height: "100%", background: barColor(r) }} />
+                    </div>
+                  </div>
+                ))}
+                {rest.length > 0 && (
+                  <div className="muted" style={{ fontSize: "12px" }}>
+                    + {rest.length} more · {fmtPct(restPct)}
+                  </div>
+                )}
+                {!rows.length && <div className="empty">No statistics available.</div>}
+              </div>
+              <div style={{ marginTop: "14px" }}>
+                <Link href={`/dashboard/${c.slug}`} className="dash-more">View details →</Link>
+              </div>
+            </section>
+          );
+        })}
+      </div>
+
+      {/* CONFIDENCE */}
+      <h2 style={{ marginTop: "24px" }}>Extracted Confidence Distribution</h2>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px", marginTop: "12px" }}>
+        {confCats.map((c) => {
+          const { rows, total } = by(c.slug);
+          return (
+            <section className="panel" key={c.slug}>
+              <Link href={`/dashboard/${c.slug}`} className="dash-card-link">
+                <h2>{c.title} (total: {total})</h2>
+              </Link>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" }}>
+                {rows.map((r) => (
+                  <div key={r.label}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "4px" }}>
+                      <span>{r.label}</span>
+                      <strong>{fmtPct(r.pct)} <span className="muted" style={{ fontWeight: 400 }}>({r.count})</span></strong>
+                    </div>
+                    <div style={{ height: "6px", background: "var(--surface-muted)", borderRadius: "3px", overflow: "hidden" }}>
+                      <div style={{ width: `${r.pct}%`, height: "100%", background: barColor(r) }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: "14px" }}>
+                <Link href={`/dashboard/${c.slug}`} className="dash-more">View details →</Link>
+              </div>
+            </section>
+          );
+        })}
       </div>
     </>
   );

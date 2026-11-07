@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mochi Move Club 🐰</title>
+<style>
+:root{--pink:#ffb9d1;--pink2:#ffe3ed;--purple:#a99be9;--ink:#51475f;--mint:#bcebdc}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:linear-gradient(135deg,#fff0f5,#f0edff 55%,#e6fbf4);min-height:100vh}
+main{max-width:1180px;margin:auto;padding:22px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.brand{display:flex;align-items:center;gap:12px}.logo{width:54px;height:54px;border-radius:18px;background:#fff;display:grid;place-items:center;font-size:30px;box-shadow:0 8px 24px #b99ec533}h1{font-size:clamp(23px,4vw,34px);margin:0}.sub{margin:3px 0 0;color:#8a7d9a;font-size:14px}.pill{background:#fff9;border:1px solid #fff;padding:9px 14px;border-radius:99px;font-size:13px}
+.layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,.8fr);gap:18px;margin-top:20px}.panel{background:#ffffffc9;border:1px solid #fff;border-radius:26px;padding:16px;box-shadow:0 14px 40px #8874b51a;backdrop-filter:blur(12px)}
+.stage{position:relative;overflow:hidden;border-radius:20px;min-height:390px;background:linear-gradient(#d8f4ed,#e7e2ff 65%,#fce5ef)}#scene{width:100%;height:390px;display:block}.stage-tag{position:absolute;left:14px;top:14px;background:#ffffffc9;padding:8px 12px;border-radius:99px;font-size:12px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:13px}.stat{background:#fff;border-radius:17px;padding:12px;text-align:center}.stat strong{font-size:25px;display:block;color:#8978d3}.stat span{font-size:12px;color:#968aa3}.controls{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}.back{background:linear-gradient(120deg,#bcebdc,#d8f4ed);color:#557b70;border:1px solid #a9dfce}.rep-counter{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding:14px 17px;border-radius:20px;background:linear-gradient(120deg,#fff0f6,#f2efff 58%,#eafaf4);border:1px solid #fff;box-shadow:0 8px 22px #b99ec522}.rep-counter .label{font-size:13px;color:#8a7d9a;font-weight:700}.rep-counter strong{display:block;font-size:clamp(30px,5vw,42px);line-height:1.1;color:#927fd8;font-variant-numeric:tabular-nums}.rep-counter small{font-size:12px;color:#9589a3}.rep-counter .bubble{min-width:76px;text-align:center;background:#fff;border-radius:17px;padding:9px 12px}.rep-counter .done{color:#70b99f}button{border:0;border-radius:99px;padding:12px 17px;font-weight:700;cursor:pointer;font-size:14px;transition:.2s}button:hover{transform:translateY(-2px)}.primary{background:linear-gradient(120deg,#f6aeca,#b5a8f1);color:white;box-shadow:0 7px 18px #d6a7d655}.secondary{background:#fff;color:#7c6b9a;border:1px solid #eee5fa}.side h2{margin:3px 0 12px;font-size:19px}.cam{background:#f5f1ff;border:1px dashed #c9bdeb;border-radius:18px;overflow:hidden;position:relative;aspect-ratio:4/3;display:grid;place-items:center;color:#9284ad;text-align:center}video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:none}#camPlaceholder{padding:20px}.hint{font-size:13px;line-height:1.55;color:#8e829c;margin:10px 2px}.goal{height:10px;background:#f0eafa;border-radius:20px;overflow:hidden;margin:10px 0}.goal>div{height:100%;width:0;background:linear-gradient(90deg,#f5a9c7,#9f91e7);transition:width .25s}.move{display:flex;align-items:center;gap:12px;background:#fff;border-radius:16px;padding:12px;margin-top:10px}.exercise-list{display:grid;gap:8px}.exercise{width:100%;text-align:left;border:1px solid #eee5fa;background:#fff;color:#75678e;border-radius:15px;padding:11px 13px;display:flex;align-items:center;gap:10px}.exercise.active{border:2px solid #c1b4f0;background:#f5f1ff;color:#62518c}.exercise span{font-size:23px}.exercise small{display:block;color:#9589a3;font-weight:500}.exercise:focus-visible,button:focus-visible{outline:3px solid #9f91e7;outline-offset:2px}.move .emoji{font-size:27px}.move b{display:block;font-size:14px}.move small{color:#9589a3}.status{font-size:13px;background:#fff4df;color:#9a7840;padding:10px 12px;border-radius:13px;margin-top:12px}.footer{text-align:center;color:#9b90a6;font-size:12px;margin:18px 0 4px}
+@media(max-width:800px){.layout{grid-template-columns:1fr}.stage,#scene{min-height:300px;height:300px}.stats{gap:7px}.stat{padding:9px 5px}}
+</style>
+</head>
+<body>
+<main>
+<header class="top"><div class="brand"><div class="logo">🐰</div><div><h1>Mochi Move Club</h1><p class="sub">ขยับนิด พิชิตดาว ไปกับน้องโมจิ ✨</p></div></div><div class="pill">🌷 เกมออกกำลังกายแสนสดใส</div></header>
+<div class="layout">
+<section class="panel">
+ <div class="stage"><canvas id="scene"></canvas><div class="stage-tag">🏡 MOCHI'S GARDEN</div></div>
+ <div class="stats">
+  <div class="stat"><strong id="count">0</strong><span>ครั้งที่ทำได้</span></div>
+  <div class="stat"><strong id="stars">0</strong><span>ดาวที่ได้รับ ⭐</span></div>
+  <div class="stat"><strong id="time">00:00</strong><span>เวลาเล่น</span></div>
+ </div>
+ <div class="rep-counter"><div><div class="label">🐰 จำนวนครั้งที่เหลือ</div><strong id="remaining">30</strong><small id="repCaption">ทำให้ครบ 30 ครั้งในท่านี้นะ!</small></div><div class="bubble"><strong id="exerciseReps">0/30</strong><small>ครั้งที่สำเร็จ</small></div></div>
+  <div class="controls"><button class="back" id="back">← ย้อนกลับ</button><button class="primary" id="start">▶ เริ่มเล่นด้วยกล้อง</button><button class="secondary" id="stop">หยุดกล้อง</button><button class="secondary" id="reset">เริ่มใหม่ ↻</button></div>
+ <div class="goal"><div id="progress"></div></div>
+ <div class="hint" id="goalHint">เป้าหมายวันนี้: สควอต 30 ครั้ง · ย่อตัวลงแล้วลุกขึ้นให้สุด น้องโมจิจะช่วยนับให้ 💗</div>
+</section>
+<aside class="panel side">
+ <h2>📸 กล้องของฉัน</h2>
+ <div class="cam"><video id="video" autoplay playsinline muted></video><div id="camPlaceholder">📷<br><b>ยังไม่ได้เปิดกล้อง</b><br><small>กดปุ่ม “เริ่มเล่นด้วยกล้อง” เพื่อเริ่ม</small></div></div>
+ <div class="status" id="status">พร้อมแล้ว! กดเริ่มเล่นและอนุญาตให้เข้าถึงกล้อง</div>
+ <h2 style="margin-top:20px">🎀 เลือกท่าออกกำลังกาย</h2>
+ <div class="exercise-list">
+  <button class="exercise active" data-exercise="squat"><span>🧎</span><div><b>สควอต (Squat)</b><small>ย่อตัวแล้วลุกขึ้น · 30 ครั้ง</small></div></button>
+  <button class="exercise" data-exercise="arms"><span>🙆</span><div><b>ยกแขนเหนือศีรษะ</b><small>ยกมือขึ้นแล้วลดลง · 30 ครั้ง</small></div></button>
+  <button class="exercise" data-exercise="march"><span>🐾</span><div><b>ยกเข่าสลับข้าง</b><small>ยกเข่าซ้าย–ขวาสลับกัน · 30 ครั้ง</small></div></button>
+ </div>
+ <div class="move"><div class="emoji">⭐</div><div><b>รับดาว</b><small>ทุกครั้งที่ทำสำเร็จ รับ 10 ดาว</small></div></div>
+ <p class="hint">น้องโมจิจะขยับตามตำแหน่งของคุณบนหน้าจอด้วย 🐰 วางกล้องให้เห็นตั้งแต่ศีรษะถึงเข่า ยืนห่างจากกล้องพอเหมาะ และมีแสงสว่างเพียงพอ</p>
+</aside>
+</div>
+<div class="footer">Mochi Move Club · กล้องทำงานบนอุปกรณ์ของคุณ · สนุกอย่างปลอดภัยนะ 💕</div>
+</main>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+const canvas=document.querySelector('#scene');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(canvas.clientWidth,canvas.clientHeight,false);renderer.setClearColor(0x000000,0);
+const scene=new THREE.Scene();const camera=new THREE.PerspectiveCamera(34,canvas.clientWidth/canvas.clientHeight,.1,100);camera.position.set(0,2.5,8);camera.lookAt(0,1.2,0);
+scene.add(new THREE.HemisphereLight(0xffffff,0xc4b7df,2));const light=new THREE.DirectionalLight(0xffffff,2.2);light.position.set(-3,6,5);scene.add(light);
+const mat=(c,rough=.8)=>new THREE.MeshStandardMaterial({color:c,roughness:rough});
+const floor=new THREE.Mesh(new THREE.CircleGeometry(5,64),mat('#c6eddf'));floor.rotation.x=-Math.PI/2;floor.position.y=-.02;scene.add(floor);
+const bunny=new THREE.Group();scene.add(bunny);
+const white=mat('#fffaf7'),pink=mat('#f6b9d0'),dark=mat('#574b61'),blush=mat('#f5a9bd');
+function ball(parent,x,y,z,sx,sy,sz,m){const o=new THREE.Mesh(new THREE.SphereGeometry(1,32,24),m);o.position.set(x,y,z);o.scale.set(sx,sy,sz);parent.add(o);return o}
+ball(bunny,0,.75,0,.62,.68,.48,white);ball(bunny,0,1.72,0,.68,.62,.55,white);
+const ear1=ball(bunny,-.38,2.42,0,.19,.62,.18,white);ear1.rotation.z=-.2;const ear2=ball(bunny,.38,2.42,0,.19,.62,.18,white);ear2.rotation.z=.2;
+const ei1=ball(bunny,-.38,2.43,.145,.105,.43,.035,pink);ei1.rotation.z=-.2;const ei2=ball(bunny,.38,2.43,.145,.105,.43,.035,pink);ei2.rotation.z=.2;
+ball(bunny,-.23,1.83,.49,.07,.09,.04,dark);ball(bunny,.23,1.83,.49,.07,.09,.04,dark);ball(bunny,0,1.65,.53,.09,.06,.04,blush);ball(bunny,-.43,1.62,.48,.13,.07,.025,blush);ball(bunny,.43,1.62,.48,.13,.07,.025,blush);
+for(const x of [-.32,.32]){ball(bunny,x,.18,0,.22,.2,.3,white);ball(bunny,x,.83,.0,.18,.43,.18,white)}
+ball(bunny,0,.65,-.48,.2,.2,.2,white);
+const flowers=new THREE.Group();scene.add(flowers);for(let i=0;i<18;i++){let a=i/18*Math.PI*2,r=3+Math.random()*1.2,x=Math.cos(a)*r,z=Math.sin(a)*r;let stem=new THREE.Mesh(new THREE.CylinderGeometry(.025,.035,.55,8),mat('#8ac9a7'));stem.position.set(x,.27,z);flowers.add(stem);ball(flowers,x,.58,z,.12,.12,.12,mat(i%2?'#f7b8d0':'#f7df91'));}
+const clouds=new THREE.Group();scene.add(clouds);for(let i=0;i<10;i++){const o=ball(clouds,(Math.random()-.5)*9,2.7+Math.random()*1.5,-2-Math.random()*2,.25,.1,.15,mat('#ffffff'));o.material.transparent=true;o.material.opacity=.7}
+let tick=0,targetX=0,bodyBounce=0;function animate(){requestAnimationFrame(animate);tick+=.018;bunny.position.x+=(targetX-bunny.position.x)*.075;bunny.position.y=Math.sin(tick*2)*.045+bodyBounce;bunny.rotation.y+=(Math.sign(targetX-bunny.position.x)*-.12-bunny.rotation.y)*.025;renderer.render(scene,camera)}animate();
+new ResizeObserver(()=>{const w=canvas.clientWidth,h=canvas.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}).observe(canvas);
+const video=document.querySelector('#video'),placeholder=document.querySelector('#camPlaceholder'),status=document.querySelector('#status');let stream=null,landmarker=null,running=false,lastState='up',reps=0,seconds=0,timer=null,lastDetect=0,exercise='squat',marchReady=true;
+const REP_GOAL=30;
+const setStatus=t=>status.textContent=t;
+function update(){
+ document.querySelector('#count').textContent=reps;
+ document.querySelector('#stars').textContent=reps*10;
+ document.querySelector('#progress').style.width=Math.min(100,reps/REP_GOAL*100)+'%';
+ document.querySelector('#remaining').textContent=Math.max(0,REP_GOAL-reps);
+ document.querySelector('#exerciseReps').textContent=Math.min(reps,REP_GOAL)+'/'+REP_GOAL;
+ document.querySelector('#remaining').classList.toggle('done',reps>=REP_GOAL);
+ document.querySelector('#repCaption').textContent=reps>=REP_GOAL?'สำเร็จแล้ว เก่งมาก! 🎉':'ทำให้ครบ 30 ครั้งในท่านี้นะ!';
+}
+const exerciseInfo={squat:{name:'สควอต',goal:'ย่อตัวลงแล้วลุกขึ้นให้สุด',hint:'เป้าหมายวันนี้: สควอต 30 ครั้ง · ย่อตัวลงแล้วลุกขึ้นให้สุด น้องโมจิจะช่วยนับให้ 💗'},arms:{name:'ยกแขนเหนือศีรษะ',goal:'ยกมือทั้งสองข้างขึ้นเหนือศีรษะแล้วลดลง',hint:'เป้าหมายวันนี้: ยกแขนเหนือศีรษะ 30 ครั้ง · ยกมือทั้งสองข้างขึ้นแล้วลดลงช้า ๆ 💗'},march:{name:'ยกเข่าสลับข้าง',goal:'ยกเข่าซ้ายและขวาสลับกัน',hint:'เป้าหมายวันนี้: ยกเข่าสลับข้าง 30 ครั้ง · ยกเข่าทีละข้างอย่างนุ่มนวล 💗'}};
+function chooseExercise(name){exercise=name;reps=0;lastState='up';marchReady=true;update();document.querySelectorAll('.exercise').forEach(b=>b.classList.toggle('active',b.dataset.exercise===name));document.querySelector('#goalHint').textContent=exerciseInfo[name].hint;setStatus('เลือกท่า'+exerciseInfo[name].name+'แล้ว พร้อมเริ่มกันเลย! 🌸')}
+document.querySelectorAll('.exercise').forEach(b=>b.addEventListener('click',()=>chooseExercise(b.dataset.exercise)));
+function angle(a,b,c){const ab={x:a.x-b.x,y:a.y-b.y},cb={x:c.x-b.x,y:c.y-b.y};const dot=ab.x*cb.x+ab.y*cb.y;const mag=Math.hypot(ab.x,ab.y)*Math.hypot(cb.x,cb.y);return Math.acos(Math.max(-1,Math.min(1,dot/(mag||1))))*180/Math.PI}
+function award(message){
+ if(reps>=REP_GOAL)return;
+ reps++;update();setStatus(message+' รับ 10 ดาว ⭐');
+ if(reps>=REP_GOAL){setStatus('ครบ 30 ครั้งแล้ว เก่งมาก! 🎉 เลือกท่าถัดไปได้เลย');}
+}
+function formatTime(){document.querySelector('#time').textContent=String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0')}
+async function start(){
+ try{
+  if(!navigator.mediaDevices?.getUserMedia)throw new Error('เบราว์เซอร์นี้ไม่รองรับกล้อง หรือกรุณาเปิดผ่าน localhost/HTTPS');
+  setStatus('กำลังเปิดกล้องและเตรียมระบบตรวจจับท่าทาง…');
+  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:640,height:480},audio:false});video.srcObject=stream;video.style.display='block';placeholder.style.display='none';await video.play();
+  const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14');
+  const fileset=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+  landmarker=await vision.PoseLandmarker.createFromOptions(fileset,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',delegate:'GPU'},runningMode:'VIDEO',numPoses:1});
+  running=true;lastState='up';if(!timer)timer=setInterval(()=>{seconds++;formatTime()},1000);setStatus('กล้องพร้อมแล้ว! ลองย่อตัวลงแล้วลุกขึ้นได้เลย 💪');detect();
+ }catch(e){setStatus('เปิดกล้องไม่สำเร็จ: '+e.message);stop()}
+}
+function detect(){
+ if(!running||!landmarker)return;
+ if(video.currentTime!==lastDetect){lastDetect=video.currentTime;const result=landmarker.detectForVideo(video,performance.now());const p=result.landmarks?.[0];
+  if(p){
+   const required=exercise==='squat'?[23,24,25,26,27,28]:exercise==='arms'?[11,12,15,16]:[23,24,25,26];
+   const visible=required.every(i=>(p[i].visibility??0)>.35);
+   // Follow the player's horizontal position. Mirror X to match the selfie camera preview.
+   const center=(p[11].x+p[12].x)/2;targetX=(.5-center)*4.2;targetX=Math.max(-2.1,Math.min(2.1,targetX));
+   const shoulderY=(p[11].y+p[12].y)/2,hipY=(p[23].y+p[24].y)/2;
+   bodyBounce=Math.max(-.08,Math.min(.12,(.5-hipY)*.22));
+   if(visible){
+    if(exercise==='squat'){
+     const left=angle(p[23],p[25],p[27]),right=angle(p[24],p[26],p[28]),knee=(left+right)/2;
+     if(knee<110){lastState='down';setStatus('ย่อลงได้ดีเลย! ค่อย ๆ ลุกขึ้นนะ 🐰')}
+     else if(knee>155&&lastState==='down'){lastState='up';award('เก่งมาก! สควอตสำเร็จ')}
+     else setStatus('ยืนตรงแล้วค่อย ๆ ย่อตัวลงนะ');
+    }else if(exercise==='arms'){
+     const wristsUp=p[15].y<shoulderY-.08&&p[16].y<shoulderY-.08;
+     const wristsDown=p[15].y>shoulderY+.02&&p[16].y>shoulderY+.02;
+     if(wristsUp){lastState='up';setStatus('ยกแขนสูงอีกนิด เยี่ยมเลย! 🙆')}
+     else if(wristsDown&&lastState==='up'){lastState='down';award('ยกแขนสำเร็จ!')}
+     else setStatus('ยกมือทั้งสองข้างเหนือศีรษะ แล้วค่อย ๆ ลดลง');
+    }else{
+     const leftUp=p[25].y<p[23].y-.07,rightUp=p[26].y<p[24].y-.07;
+     if(leftUp||rightUp){if(marchReady){award('ยกเข่าสำเร็จ!');marchReady=false}setStatus('ดีมาก! สลับไปยกอีกข้างได้เลย 🐾')}
+     else{marchReady=true;setStatus('ยกเข่าซ้าย–ขวาสลับกันช้า ๆ นะ')}
+    }
+   }else setStatus('ขยับให้กล้องเห็นท่าทางชัด ๆ อีกนิดนะ');
+  }else{targetX+=(0-targetX)*.04;bodyBounce=0;setStatus('ยังไม่เห็นท่าทางของคุณ ลองถอยให้เห็นช่วงตัวมากขึ้น')}
+ }
+ requestAnimationFrame(detect);
+}
+function stop(){running=false;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}video.srcObject=null;video.style.display='none';placeholder.style.display='block';if(landmarker){landmarker.close();landmarker=null}setStatus('หยุดกล้องแล้ว กดเริ่มเล่นเพื่อเล่นต่อได้')}
+document.querySelector('#back').addEventListener('click',()=>{window.location.href='/wellness'});
+document.querySelector('#start').addEventListener('click',start);document.querySelector('#stop').addEventListener('click',stop);document.querySelector('#reset').addEventListener('click',()=>{reps=0;seconds=0;lastState='up';marchReady=true;formatTime();update();setStatus('เริ่มภารกิจใหม่กันเลย! 🌸')});window.addEventListener('beforeunload',stop);update();formatTime();
+</script>
+</body></html>

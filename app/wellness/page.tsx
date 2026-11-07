@@ -4,58 +4,30 @@
 import { useEffect, useState } from "react";
 import { getTranslation, type Language } from "@/lib/translations";
 
-type StepType = "assessment" | "chatbot" | "activities" | "planner";
-type StepStatus = "available" | "completed" | "locked";
-
-type WellnessStep = {
-  number: string;
-  icon: string;
-  href: string;
-  type: StepType;
-};
-
-type UpdatedStep = WellnessStep & {
-  title: string;
-  subtitle: string;
-  description: string;
-  status: StepStatus;
-  statusText: string;
-  buttonText: string;
-};
-
-const wellnessSteps: WellnessStep[] = [
+const wellnessSteps = [
   {
     number: "01",
     icon: "💗",
     href: "/wellness/check-in",
-    type: "assessment",
   },
   {
     number: "02",
     icon: "🤖",
     href: "/wellness/chatbot",
-    type: "chatbot",
   },
   {
     number: "03",
     icon: "🌿",
     href: "/wellness/recommendations",
-    type: "activities",
-  },
-  {
-    number: "04",
-    icon: "⏰",
-    href: "/wellness/break-planner",
-    type: "planner",
   },
 ];
 
 export default function WellnessPage() {
   const [assessmentCompleted, setAssessmentCompleted] = useState(false);
+  const [activityCompleted, setActivityCompleted] = useState(false);
   const [lang, setLang] = useState<Language>("en");
-  const [isReady, setIsReady] = useState(false);
 
-  // ตรวจสอบภาษาและสถานะการประเมิน
+  // ตรวจสอบภาษาและสถานะของแต่ละขั้นตอน
   useEffect(() => {
     const updatePageData = () => {
       const match = document.cookie.match(/(?:^|;\s*)lang=(en|th)/);
@@ -63,17 +35,28 @@ export default function WellnessPage() {
 
       setLang(currentLang);
 
-      const completed =
-        localStorage.getItem("wellness_assessment_completed") === "true";
+      // ตรวจสอบขั้นตอนที่ 1
+      const assessmentDone = localStorage.getItem(
+        "wellness_assessment_completed"
+      );
 
-      setAssessmentCompleted(completed);
-      setIsReady(true);
+      setAssessmentCompleted(assessmentDone === "true");
+
+      // ตรวจสอบขั้นตอนที่ 2
+      const activityDone = localStorage.getItem(
+        "wellness_step2_completed"
+      );
+
+      setActivityCompleted(activityDone === "true");
     };
 
     updatePageData();
 
+    // ตรวจสอบอีกครั้งเมื่อกลับมาที่หน้านี้
     window.addEventListener("focus", updatePageData);
     window.addEventListener("pageshow", updatePageData);
+
+    // ตรวจสอบเมื่อ localStorage เปลี่ยนจากแท็บอื่น
     window.addEventListener("storage", updatePageData);
 
     return () => {
@@ -87,20 +70,35 @@ export default function WellnessPage() {
 
   // รีเซ็ตผลการประเมิน
   const handleResetAssessment = () => {
+    const confirmed = window.confirm(
+      lang === "en"
+        ? "Are you sure you want to reset your assessment? Your previous result will be deleted."
+        : "ต้องการรีเซ็ตแบบประเมินใช่หรือไม่? ผลการประเมินเดิมจะถูกลบ"
+    );
+
+    if (!confirmed) return;
+
     localStorage.removeItem("wellness_assessment_completed");
     sessionStorage.removeItem("wellnessAssessment");
 
+    // รีเซ็ตสถานะของขั้นตอนที่ 2 ด้วย
+    localStorage.removeItem("wellness_step2_completed");
+
     setAssessmentCompleted(false);
+    setActivityCompleted(false);
   };
 
-  // Progress ของขั้นตอนหลัก 2 ขั้นตอน
-  const completedSteps = assessmentCompleted ? 1 : 0;
+  // จำนวนขั้นตอนที่ทำเสร็จแล้ว
+  const completedSteps =
+    (assessmentCompleted ? 1 : 0) +
+    (activityCompleted ? 1 : 0);
+
   const progress = (completedSteps / 2) * 100;
 
-  // ข้อมูลการ์ดตามภาษา
-  const updatedSteps: UpdatedStep[] = wellnessSteps.map((step) => {
-    // STEP 01: Stress Assessment
-    if (step.type === "assessment") {
+  // ข้อมูลแต่ละขั้นตอนตามภาษาที่เลือก
+  const updatedSteps = wellnessSteps.map((step) => {
+    // STEP 01: แบบประเมิน
+    if (step.number === "01") {
       return {
         ...step,
         title: t.wellnessStep1Title,
@@ -116,65 +114,52 @@ export default function WellnessPage() {
       };
     }
 
-    // STEP 02: Chatbot
-    if (step.type === "chatbot") {
+    // STEP 02: กิจกรรม Wellness / Chatbot / Dream Runner
+    if (step.number === "02") {
       return {
         ...step,
         title: t.wellnessStep2Title,
         subtitle: t.wellnessStep2Subtitle,
         description: t.wellnessStep2Desc,
-        status: assessmentCompleted ? "available" : "locked",
-        statusText: assessmentCompleted
-          ? t.wellnessAvailable
-          : t.wellnessLocked,
-        buttonText: assessmentCompleted
-          ? t.wellnessStartChatbot
-          : t.wellnessCompleteStep1,
+
+        status: !assessmentCompleted
+          ? "locked"
+          : activityCompleted
+            ? "completed"
+            : "available",
+
+        statusText: !assessmentCompleted
+          ? t.wellnessLocked
+          : activityCompleted
+            ? t.wellnessCompleted
+            : t.wellnessAvailable,
+
+        buttonText: !assessmentCompleted
+          ? t.wellnessCompleteStep1
+          : activityCompleted
+            ? t.wellnessCompleted
+            : t.wellnessStartChatbot,
       };
     }
 
-    // STEP 03: Recommended Activities
-    if (step.type === "activities") {
-      return {
-        ...step,
-        title:
-          lang === "en"
-            ? "Recommended Activities"
-            : "กิจกรรมแนะนำ",
-        subtitle:
-          lang === "en"
-            ? "Relax and recharge yourself"
-            : "ผ่อนคลายและเติมพลังให้ตัวเอง",
-        description:
-          lang === "en"
-            ? "Explore various activities that can help you relax, reduce stress, and improve your well-being."
-            : "ค้นหากิจกรรมหลากหลายรูปแบบที่ช่วยให้คุณผ่อนคลาย ลดความเครียด และดูแลสุขภาพใจ",
-        status: "available",
-        statusText: lang === "en" ? "Available" : "พร้อมใช้งาน",
-        buttonText:
-          lang === "en" ? "Explore Activities" : "ดูกิจกรรมแนะนำ",
-      };
-    }
-
-    // STEP 04: Break Planner
+    // STEP 03: ปลดล็อกเมื่อทำ STEP 02 สำเร็จ
     return {
       ...step,
-      title:
-        lang === "en"
-          ? "Break Planner"
-          : "วางแผนเวลาพัก (Break Planner)",
-      subtitle:
-        lang === "en"
-          ? "Plan your personal break time"
-          : "วางแผนเวลาพักในแบบของคุณ",
-      description:
-        lang === "en"
-          ? "Create your own break plan and organize relaxing activities that fit your daily routine."
-          : "จัดตารางเวลาพักส่วนตัวและเลือกกิจกรรมผ่อนคลายให้เหมาะกับกิจวัตรประจำวันของคุณ",
-      status: "available",
-      statusText: lang === "en" ? "Available" : "พร้อมใช้งาน",
-      buttonText:
-        lang === "en" ? "Open Break Planner" : "เปิด Break Planner",
+      title: t.wellnessStep3Title,
+      subtitle: t.wellnessStep3Subtitle,
+      description: t.wellnessStep3Desc,
+
+      status: activityCompleted ? "available" : "locked",
+
+      statusText: activityCompleted
+        ? t.wellnessAvailable
+        : t.wellnessLocked,
+
+      buttonText: activityCompleted
+        ? lang === "en"
+          ? "Start Step 3"
+          : "เริ่มขั้นตอนที่ 3"
+        : t.wellnessCompleteStep2,
     };
   });
 
@@ -189,49 +174,33 @@ export default function WellnessPage() {
       </div>
 
       {/* PROGRESS */}
-      <section
-        className="panel"
-        style={{
-          marginBottom: "24px",
-          padding: "22px",
-          borderRadius: "16px",
-        }}
-      >
+      <section className="panel" style={{ marginBottom: "20px" }}>
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            gap: "12px",
-            marginBottom: "14px",
+            marginBottom: "12px",
           }}
         >
           <div>
-            <h2 style={{ fontSize: "18px" }}>
+            <h2 style={{ fontSize: "17px" }}>
               {t.wellnessProgress}
             </h2>
 
-            <p className="muted" style={{ fontSize: "13px" }}>
+            <p className="muted" style={{ fontSize: "12px" }}>
               {t.wellnessProgressDesc}
             </p>
           </div>
 
-          <strong
-            style={{
-              color: "var(--accent)",
-              fontSize: "15px",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {completedSteps} / 2{" "}
-            {lang === "en" ? "Steps" : "ขั้นตอน"}
+          <strong style={{ color: "var(--accent)", fontSize: "14px" }}>
+            {completedSteps} / 2 {lang === "en" ? "Steps" : "ขั้นตอน"}
           </strong>
         </div>
 
-        {/* Progress Bar */}
         <div
           style={{
-            height: "10px",
+            height: "9px",
             background: "var(--surface-muted)",
             borderRadius: "20px",
             overflow: "hidden",
@@ -243,30 +212,13 @@ export default function WellnessPage() {
               height: "100%",
               background: "var(--accent)",
               borderRadius: "20px",
-              transition: "width 0.4s ease",
+              transition: "width 0.3s ease",
             }}
           />
         </div>
-
-        {/* Current Status */}
-        <p
-          style={{
-            fontSize: "13px",
-            marginTop: "12px",
-            color: "var(--muted)",
-          }}
-        >
-          {assessmentCompleted
-            ? lang === "en"
-              ? "✓ Assessment completed! You can continue to the chatbot."
-              : "✓ ทำแบบประเมินเรียบร้อยแล้ว สามารถไปยัง Chatbot ได้เลย"
-            : lang === "en"
-              ? "Current step: Stress Assessment"
-              : "ขั้นตอนปัจจุบัน: การประเมินความเครียด"}
-        </p>
       </section>
 
-      {/* STEP HEADER */}
+      {/* STEP HEADER AND DISCLAIMER */}
       <div
         style={{
           display: "flex",
@@ -274,7 +226,7 @@ export default function WellnessPage() {
           alignItems: "center",
           gap: "16px",
           flexWrap: "wrap",
-          marginBottom: "18px",
+          marginBottom: "16px",
         }}
       >
         <div style={{ flex: "1 1 250px" }}>
@@ -285,11 +237,10 @@ export default function WellnessPage() {
           </p>
         </div>
 
-        {/* DISCLAIMER */}
         <div
           className="notice"
           style={{
-            flex: "1 1 300px",
+            flex: "1 1 350px",
             maxWidth: "520px",
             boxSizing: "border-box",
             fontSize: "12px",
@@ -309,14 +260,11 @@ export default function WellnessPage() {
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-          gap: "20px",
+          gap: "16px",
         }}
       >
         {updatedSteps.map((step) => {
-          // ล็อกเฉพาะ Chatbot เมื่อยังไม่ได้ประเมิน
-          const isLocked =
-            step.type === "chatbot" && !assessmentCompleted;
-
+          const isLocked = step.status === "locked";
           const isCompleted = step.status === "completed";
 
           return (
@@ -326,14 +274,11 @@ export default function WellnessPage() {
               style={{
                 display: "flex",
                 flexDirection: "column",
-                minHeight: "300px",
-                padding: "22px",
-                borderRadius: "16px",
+                minHeight: "290px",
                 opacity: isLocked ? 0.65 : 1,
                 borderTop: isLocked
                   ? "3px solid var(--border)"
                   : "3px solid var(--accent)",
-                transition: "all 0.3s ease",
               }}
             >
               {/* ICON AND STATUS */}
@@ -347,14 +292,14 @@ export default function WellnessPage() {
               >
                 <div
                   style={{
-                    width: "58px",
-                    height: "58px",
+                    width: "54px",
+                    height: "54px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    borderRadius: "15px",
+                    borderRadius: "12px",
                     background: "var(--surface-muted)",
-                    fontSize: "30px",
+                    fontSize: "28px",
                   }}
                 >
                   {step.icon}
@@ -383,29 +328,22 @@ export default function WellnessPage() {
                 className="muted"
                 style={{
                   fontSize: "12px",
-                  marginBottom: "6px",
+                  marginBottom: "5px",
                 }}
               >
-                {lang === "en" ? "STEP" : "ขั้นตอนที่"}{" "}
-                {step.number}
+                {lang === "en" ? "STEP" : "ขั้นตอนที่"} {step.number}
               </p>
 
               {/* TITLE */}
-              <h2
-                style={{
-                  fontSize: "19px",
-                  marginBottom: "6px",
-                }}
-              >
+              <h2 style={{ fontSize: "18px", marginBottom: "5px" }}>
                 {step.title}
               </h2>
 
-              {/* SUBTITLE */}
               <p
                 style={{
                   fontSize: "13px",
                   fontWeight: "600",
-                  marginBottom: "12px",
+                  marginBottom: "10px",
                 }}
               >
                 {step.subtitle}
@@ -429,20 +367,19 @@ export default function WellnessPage() {
                 <button
                   type="button"
                   disabled
-                  aria-disabled="true"
                   style={{
                     width: "100%",
-                    padding: "12px",
+                    padding: "11px 15px",
                     background: "var(--surface-muted)",
                     color: "var(--muted)",
                     border: "none",
-                    borderRadius: "10px",
+                    borderRadius: "8px",
                     fontSize: "13px",
                     fontWeight: "600",
                     cursor: "not-allowed",
                   }}
                 >
-                  🔒 {step.buttonText}
+                  {step.buttonText}
                 </button>
               ) : (
                 <a
@@ -451,14 +388,14 @@ export default function WellnessPage() {
                     display: "block",
                     width: "100%",
                     boxSizing: "border-box",
-                    padding: "12px 15px",
+                    padding: "11px 15px",
                     backgroundColor: isCompleted
                       ? "var(--surface-muted)"
                       : "var(--accent)",
                     color: isCompleted
                       ? "var(--accent)"
                       : "#FFFFFF",
-                    borderRadius: "10px",
+                    borderRadius: "8px",
                     textAlign: "center",
                     textDecoration: "none",
                     fontSize: "13px",
@@ -468,24 +405,28 @@ export default function WellnessPage() {
                   {step.buttonText}
                 </a>
               )}
-              {step.type === "assessment" && assessmentCompleted && (
+
+              {/* RESET ASSESSMENT BUTTON */}
+              {step.number === "01" && isCompleted && (
                 <button
                   type="button"
                   onClick={handleResetAssessment}
                   style={{
                     width: "100%",
+                    padding: "10px 15px",
                     marginTop: "10px",
-                    padding: "10px 18px",
-                    borderRadius: "10px",
-                    border: "1px solid var(--border)",
-                    background: "var(--surface)",
-                    color: "var(--muted)",
+                    background: "transparent",
+                    color: "var(--accent)",
+                    border: "1px solid var(--accent)",
+                    borderRadius: "8px",
                     fontSize: "13px",
                     fontWeight: "600",
                     cursor: "pointer",
                   }}
                 >
-                  ↻ {lang === "en" ? "Reset Assessment" : "รีเซ็ตแบบประเมิน"}
+                  {lang === "en"
+                    ? "↻ Reset Assessment"
+                    : "↻ รีเซ็ตแบบประเมิน"}
                 </button>
               )}
             </section>

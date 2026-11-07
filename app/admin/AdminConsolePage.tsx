@@ -282,7 +282,7 @@ export default async function AdminConsolePage({ searchParams }: { searchParams:
           )}
 
           {collection === "source-records" && (
-            <form action={upsertSourceRecordAction} className="form" style={{ marginTop: "12px" }}>
+            <form key={`${collection}-${selectedItem?.id ?? "new"}`} action={upsertSourceRecordAction} className="form" style={{ marginTop: "12px" }}>
               <input type="hidden" name="id" defaultValue={selectedItem?.id ?? ""} />
               <label>
                 Title
@@ -335,7 +335,7 @@ export default async function AdminConsolePage({ searchParams }: { searchParams:
           )}
 
           {collection === "robot-models" && (
-            <form action={upsertRobotModelAction} className="form" style={{ marginTop: "12px" }}>
+            <form key={`${collection}-${selectedItem?.id ?? "new"}`} action={upsertRobotModelAction} className="form" style={{ marginTop: "12px" }}>
               <input type="hidden" name="id" defaultValue={selectedItem?.id ?? ""} />
               <label>
                 Canonical Name
@@ -398,7 +398,7 @@ export default async function AdminConsolePage({ searchParams }: { searchParams:
           )}
 
           {collection === "contributions" && (
-            <form action={upsertContributionAction} className="form" style={{ marginTop: "12px" }}>
+            <form key={`${collection}-${selectedItem?.id ?? "new"}`} action={upsertContributionAction} className="form" style={{ marginTop: "12px" }}>
               <input type="hidden" name="id" defaultValue={selectedItem?.id ?? ""} />
               <label>
                 Title
@@ -484,7 +484,7 @@ export default async function AdminConsolePage({ searchParams }: { searchParams:
                 </div>
               )}
 
-              <form action={upsertSubmittedDataAction} className="form">
+              <form key={`${collection}-${selectedItem?.id ?? "new"}`} action={upsertSubmittedDataAction} className="form">
                 <input type="hidden" name="id" defaultValue={selectedItem?.id ?? ""} />
                 <label>
                   Submission Type

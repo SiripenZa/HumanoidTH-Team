@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101b35">
+  <title>Dream Runner — นักผจญภัยแห่งสมาธิ</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    
+<header class="topbar">
+  <div class="topbar-left">
+    <a class="back-home-btn" href="/wellness">
+      ← กลับหน้าหลัก
+    </a>
+    <a class="brand" href="#" aria-label="Dream Runner">
+      ✦ DREAM RUNNER
+    </a>
+  </div>
+
+  <div class="top-actions">
+    <button id="soundToggle" class="icon-btn" type="button" aria-pressed="true" title="เปิด/ปิดเสียง">
+      ♫ <span>เสียงเปิด</span>
+    </button>
+    <button id="helpBtn" class="icon-btn" type="button">
+      วิธีเล่น
+    </button>
+  </div>
+</header>
+
+
+    <section class="game-shell">
+      <div class="scene" id="scene">
+        <canvas id="world3d" aria-label="ฉากเกมผจญภัยสามมิติ"></canvas>
+      <div class="sky-glow"></div>
+        <div class="moon"></div>
+        <div class="stars" aria-hidden="true">✦　·　✧　　 ·　✦　　✧　·　✦</div>
+        <div class="mountains mountain-back"></div>
+        <div class="mountains mountain-front"></div>
+        <div class="forest forest-back"></div>
+        <div class="forest forest-front"></div>
+        <div class="path">
+          <div class="path-center"></div>
+          <div class="path-markings"></div>
+        </div>
+        <div class="finish-gate" id="finishGate"><span>FINISH</span><b>✦</b></div>
+        <div class="runner" id="runner" aria-label="ตัวละครนักผจญภัย">
+          <div class="shadow"></div>
+          <div class="backpack"></div>
+          <div class="body"><div class="scarf"></div></div>
+          <div class="head">
+            <div class="hair"></div>
+            <div class="face">
+              <i class="eye eye-left"></i><i class="eye eye-right"></i>
+              <i class="cheek cheek-left"></i><i class="cheek cheek-right"></i>
+              <i class="smile"></i>
+            </div>
+          </div>
+          <div class="arm arm-left"></div><div class="arm arm-right"></div>
+          <div class="leg leg-left"></div><div class="leg leg-right"></div>
+          <div class="sparkle">✦</div>
+        </div>
+        <div class="scene-vignette"></div>
+
+        <div class="hud">
+          <div class="hud-pill"><small>เวลา</small><strong id="timer">03:00</strong></div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>เส้นทางแห่งความฝัน</span><strong id="progressText">0%</strong></div>
+            <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+          </div>
+          <div class="hud-pill"><small>ดาวพลังใจ</small><strong>✦ <span id="starsCount">0</span></strong></div>
+        </div>
+
+        <div class="center-message" id="centerMessage">
+          <div class="message-card">
+            <div class="message-icon">🧭</div>
+            <p class="eyebrow">A LITTLE ADVENTURE FOR YOUR MIND</p>
+            <h1>Dream Runner</h1>
+            <p>ออกเดินทางไปกับนักผจญภัยตัวน้อย<br>ค่อย ๆ ผ่อนคลาย แล้วพาเขาไปถึงเส้นชัย</p>
+            <button id="startBtn" class="primary-btn" type="button">เริ่มการผจญภัย <span>➜</span></button>
+            <p class="fineprint">ใช้เวลา 3–5 นาที · เล่นในท่านั่งที่สบาย</p>
+          </div>
+        </div>
+
+        <div class="finish-message hidden" id="finishMessage">
+          <div class="message-card victory-card">
+            <div class="trophy">🏆</div>
+            <p class="eyebrow">MISSION COMPLETE</p>
+            <h2>เธอทำได้แล้ว!</h2>
+            <p>ขอบคุณที่ให้เวลาตัวเองได้พักใจ<br>ทุกก้าวเล็ก ๆ คือความสำเร็จ</p>
+            <div class="result-stats"><span>เวลาเล่น</span><strong id="resultTime">03:00</strong><span>ดาวที่ได้รับ</span><strong>✦ <b id="resultStars">3</b></strong></div>
+            <button id="againBtn" class="primary-btn" type="button">เล่นอีกครั้ง <span>↻</span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-panel">
+        <div class="camera-area">
+          <div class="camera-preview">
+            <video id="cameraVideo" autoplay playsinline muted></video>
+            <div class="camera-placeholder" id="cameraPlaceholder"><span>◉</span><small>ภาพจากกล้องจะแสดงที่นี่</small></div>
+            <div class="camera-status" id="cameraStatus"><i></i> ยังไม่ได้เปิดกล้อง</div>
+          </div>
+          <div class="camera-copy">
+            <strong>ตัวช่วยตรวจจับดวงตา</strong>
+            <p id="eyeInstruction">เปิดกล้องเพื่อให้เกมตรวจจับสถานะดวงตา</p>
+            <button id="cameraBtn" class="secondary-btn" type="button">เปิดกล้อง</button>
+          </div>
+        </div>
+        <div class="game-controls">
+          <label class="duration-control">ระยะเวลา
+            <select id="durationSelect" aria-label="เลือกระยะเวลา">
+              <option value="180">3 นาที</option>
+              <option value="240">4 นาที</option>
+              <option value="300">5 นาที</option>
+            </select>
+          </label>
+          <button id="pauseBtn" class="secondary-btn" type="button" disabled>พักเกม</button>
+          <button id="resetBtn" class="text-btn" type="button">เริ่มใหม่</button>
+        </div>
+      </div>
+      <p class="privacy-note">🔒 กล้องใช้ตรวจจับดวงตาบนอุปกรณ์เท่านั้น วิดีโอไม่ถูกบันทึกหรือส่งไปยังเซิร์ฟเวอร์</p>
+    </section>
+    <footer>Dream Runner · Breathe, relax, and enjoy your little adventure ✨</footer>
+  </main>
+
+  <dialog id="helpDialog">
+    <form method="dialog" class="dialog-card">
+      <button class="dialog-close" aria-label="ปิด">×</button>
+      <h2>วิธีเล่น Dream Runner</h2>
+      <ol>
+        <li>เลือกเวลา 3, 4 หรือ 5 นาที แล้วกดเริ่มเกม</li>
+        <li>อนุญาตให้เว็บไซต์ใช้กล้อง และนั่งในท่าที่สบาย</li>
+        <li>เมื่อหลับตาเบา ๆ ตัวละครจะค่อย ๆ วิ่งไปข้างหน้า</li>
+        <li>เมื่อลืมตา ตัวละครจะพักตามไปด้วย คุณสามารถลืมตาได้เสมอ</li>
+        <li>หากรู้สึกไม่สบาย ให้หยุดเกมและพักได้ทันที</li>
+      </ol>
+      <p class="dialog-note">เกมนี้เป็นกิจกรรมผ่อนคลาย ไม่ใช่การทดสอบความสามารถในการกลั้นหลับตา ไม่จำเป็นต้องฝืนหลับตาต่อเนื่อง</p>
+      <button class="primary-btn" type="submit">เข้าใจแล้ว</button>
+    </form>
+  </dialog>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>

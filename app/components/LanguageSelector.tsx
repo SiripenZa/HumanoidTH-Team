@@ -14,6 +14,7 @@ export default function LanguageSelector({ currentLang }: LanguageSelectorProps)
     if (lang === currentLang) return;
     startTransition(async () => {
       await setLanguage(lang);
+      window.location.reload();
     });
   };
 
